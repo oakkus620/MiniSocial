@@ -1,0 +1,194 @@
+﻿/* ==========================================================================
+   1. TEMA DEĞİŞKENLERİ VE KÖK AYARLAR
+   ========================================================================== */
+:root {
+    --bg-image: url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png');
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-color: #212529;
+    --input-bg: #ffffff;
+    --border-color: #cccccc;
+    --tooltip-bg: #1e1e1e;
+    --tooltip-text: #ffffff;
+}
+
+body.dark-mode {
+    --bg-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png');
+    --card-bg: rgba(20, 20, 20, 0.85);
+    --text-color: #f8f9fa;
+    --input-bg: #2b2b2b;
+    --border-color: #444444;
+    --tooltip-bg: #000000;
+}
+
+/* ==========================================================================
+   2. GENEL SAYFA STİLLERİ VE ANİMASYONLAR
+   ========================================================================== */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================================
+   3. FORM KONTEYNERİ VE ELEMANLARI
+   ========================================================================== */
+.form-container {
+    position: relative;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    margin: 80px auto;
+    width: 100%;
+    max-width: 450px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: all 0.4s ease;
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.welcome-title {
+    color: var(--text-color);
+    margin: 0;
+}
+
+.lbl {
+    color: var(--text-color) !important;
+    transition: color 0.4s ease;
+}
+
+.form-control.fm {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
+    height: 55px;
+    border-radius: 15px;
+    transition: all 0.4s ease;
+}
+
+.registerButton {
+    border: none;
+    color: white;
+    padding: 12px 32px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    height: 50px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    background-color: #0d6efd;
+    transition: background-color 0.3s ease;
+}
+
+.bottom-link {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--text-color);
+}
+
+    .bottom-link a {
+        text-decoration: none;
+        padding: 5px;
+        font-weight: bold;
+    }
+
+/* ==========================================================================
+   4. TEMA DEĞİŞTİRME BUTONU
+   ========================================================================== */
+.theme-toggle-btn {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    padding: 0 16px !important;
+    width: 160px !important;
+    height: 42px !important;
+    border-radius: 21px !important;
+    border: none !important;
+    outline: none !important;
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    z-index: 999999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+    transition: width 0.4s ease, background-color 0.3s ease, color 0.3s ease !important;
+}
+
+@media (max-width: 768px) {
+    .theme-toggle-btn {
+        top: 15px !important;
+        right: 15px !important;
+        width: 42px !important;
+        padding: 0 !important;
+    }
+
+        .theme-toggle-btn .theme-text {
+            display: none !important;
+        }
+}
+
+/* ==========================================================================
+   5. OTP DOĞRULAMA KUTULARI STİLLERİ
+   ========================================================================== */
+.otp-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 25px 0;
+}
+
+.otp-input {
+    width: 50px;
+    height: 55px;
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: bold;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    outline: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+    .otp-input:focus {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 10px rgba(13, 110, 253, 0.35) !important;
+        transform: translateY(-2px);
+    }
+
+@media (max-width: 480px) {
+    .otp-container {
+        gap: 4px;
+    }
+
+    .otp-input {
+        width: 42px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}

@@ -1,0 +1,1041 @@
+﻿@inject NewProject.Data.AppDbContext _context
+@{
+    ViewData["Title"] = "Sohbetler • Mesajlar";
+    string currentUsername = Context.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+}
+
+<!-- YENİ MESAJ OLUŞTURMA MODALI -->
+<div id="newChatModal" class="ig-custom-modal-overlay" style="display: none;" onclick="closeNewChatModalOnOutside(event)">
+    <div class="ig-custom-modal-box" onclick="event.stopPropagation()">
+        <div class="ig-custom-modal-header">
+            <h3>Yeni Mesaj</h3>
+            <button type="button" onclick="toggleNewChatModal()" class="ig-custom-close-btn">✕</button>
+        </div>
+        <div class="ig-custom-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass" style="color:var(--ig-text-muted);"></i>
+            <input type="text" id="newChatSearchInput" class="ig-custom-search-input" placeholder="Kişi ara (Kullanıcı adı)..." oninput="searchUsersForNewChat(this.value)" autocomplete="off" spellcheck="false" autofocus />
+        </div>
+        <div class="ig-custom-modal-results" id="newChatSearchResults">
+            <div class="ig-search-placeholder">Mesaj göndermek istediğiniz kişiyi arayın...</div>
+        </div>
+    </div>
+</div>
+
+<div class="ig-messages-wrapper">
+    <!-- SOL İKON MENÜSÜ -->
+    <nav class="ig-sidebar">
+        <div class="ig-logo-area"><i class="fa-solid fa-globe ig-logo-icon"></i></div>
+        <ul class="ig-nav-list">
+            <li><a href="/Home/Index" class="ig-nav-item"><i class="fa-solid fa-house"></i> <span class="ig-nav-label">Ana Sayfa</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-compass"></i> <span class="ig-nav-label">Keşfet</span></a></li>
+            <li>
+                <button type="button" class="ig-nav-item" onclick="toggleSearchModal(event)" style="background:none; border:none; width:100%; text-align:left; cursor:pointer; padding: 12px 10px; color: inherit; font: inherit; display:flex; align-items:center; gap:16px;">
+                    <i class="fa-solid fa-magnifying-glass"></i> <span class="ig-nav-label">Ara</span>
+                </button>
+            </li>
+            <li><a href="/Home/Messages" class="ig-nav-item active"><i class="fa-regular fa-paper-plane"></i> <span class="ig-nav-label">Mesajlar</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-clapperboard"></i> <span class="ig-nav-label">Reels</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span></a></li>
+            <li><a href="/Home/Profile/@currentUsername" class="ig-nav-item"><img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" class="ig-nav-avatar" /> <span class="ig-nav-label">Profil</span></a></li>
+        </ul>
+        <div class="ig-sidebar-bottom">
+            <button type="button" class="ig-bottom-item" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+                <span class="ig-nav-label" id="themeText">Tema: Koyu</span>
+            </button>
+            <button type="button" class="ig-bottom-item" onclick="openLogoutModal()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="ig-nav-label">Çıkış Yap</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ANA DM ALANI -->
+    <main class="ig-dm-container">
+        <!-- SOL SOHBET LİSTESİ PANELİ -->
+        <section class="ig-dm-sidebar">
+            <div class="ig-dm-sidebar-header">
+                <div class="ig-dm-username-dropdown">
+                    <span>@currentUsername</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 11px;"></i>
+                </div>
+                <button type="button" class="ig-dm-new-chat-btn" onclick="toggleNewChatModal()" title="Yeni Mesaj"><i class="fa-regular fa-pen-to-square"></i></button>
+            </div>
+
+            <!-- SOHBETLER ARASINDA ARAMA ÇUBUĞU -->
+            <div class="ig-dm-search-box" style="padding: 0 24px 12px 24px;">
+                <div style="display: flex; align-items: center; background: var(--ig-input-bg); border-radius: 10px; padding: 8px 12px; gap: 10px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--ig-text-muted); font-size: 14px;"></i>
+                    <input type="text" id="dmSearchInput" placeholder="Ara..." oninput="filterConversations(this.value)" autocomplete="off" spellcheck="false" style="background: none; border: none; outline: none; color: var(--ig-text); font-size: 13px; width: 100%;" />
+                </div>
+            </div>
+
+            <div class="ig-dm-nav-tabs">
+                <button type="button" class="active">Mesajlar</button>
+                <button type="button">İstekler</button>
+            </div>
+            <div class="ig-dm-conversations-list" id="fullScreenChatList">
+                <!-- Dinamik sohbet listesi -->
+            </div>
+        </section>
+
+        <!-- SAĞ GENİŞ SOHBET ALANI -->
+        <section class="ig-dm-chat-area" id="fullScreenChatArea">
+            <div class="ig-dm-empty-state">
+                <div class="ig-empty-plane-icon">
+                    <i class="fa-regular fa-paper-plane"></i>
+                </div>
+                <h2>Mesajların</h2>
+                <p>Bir arkadaşına veya gruba özel fotoğraflar ve mesajlar gönder.</p>
+                <button type="button" class="ig-send-message-action-btn" onclick="toggleNewChatModal()">Mesaj gönder</button>
+            </div>
+        </section>
+    </main>
+</div>
+
+<style>
+    .ig-messages-wrapper {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background-color: var(--ig-bg);
+        color: var(--ig-text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    .ig-messages-wrapper .ig-sidebar {
+        width: 72px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        border-right: 1px solid var(--ig-border);
+        padding: 24px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: var(--ig-card-bg);
+        z-index: 1000;
+        box-sizing: border-box;
+        transition: width 0.25s ease;
+        overflow: hidden;
+    }
+
+    .ig-messages-wrapper .ig-sidebar:hover {
+        width: 244px;
+    }
+
+    .ig-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 4px 28px 8px;
+    }
+
+    .ig-logo-icon {
+        font-size: 26px;
+        color: var(--ig-primary);
+        min-width: 24px;
+        text-align: center;
+    }
+
+    .ig-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ig-nav-item, .ig-bottom-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 10px;
+        text-decoration: none;
+        color: var(--ig-text);
+        border-radius: 8px;
+        font-size: 15px;
+        white-space: nowrap;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .ig-nav-item i, .ig-bottom-item i {
+        font-size: 20px !important;
+        width: 24px;
+        text-align: center;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+
+    .ig-nav-item:hover, .ig-nav-item.active {
+        background-color: var(--ig-hover);
+        font-weight: 600;
+    }
+
+    .ig-nav-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        min-width: 24px !important;
+    }
+
+    .ig-nav-label {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .ig-messages-wrapper .ig-sidebar:hover .ig-nav-label {
+        opacity: 1;
+    }
+
+    .ig-sidebar-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .ig-bottom-item {
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+
+    .ig-bottom-item:hover {
+        background-color: var(--ig-hover);
+    }
+
+    .ig-dm-container {
+        flex: 1;
+        margin-left: 72px;
+        height: 100vh;
+        display: flex;
+        background: var(--ig-bg);
+        box-sizing: border-box;
+        width: calc(100vw - 72px);
+        transition: margin-left 0.25s ease, width 0.25s ease;
+    }
+
+    .ig-messages-wrapper .ig-sidebar:hover ~ .ig-dm-container {
+        margin-left: 244px;
+        width: calc(100vw - 244px);
+    }
+
+    .ig-dm-sidebar {
+        width: 390px;
+        border-right: 1px solid var(--ig-border);
+        display: flex;
+        flex-direction: column;
+        background: var(--ig-card-bg);
+        height: 100vh;
+        box-sizing: border-box;
+    }
+
+    .ig-dm-sidebar-header {
+        padding: 24px 24px 12px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ig-dm-username-dropdown {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ig-text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .ig-dm-new-chat-btn {
+        background: none;
+        border: none;
+        color: var(--ig-text);
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    .ig-dm-nav-tabs {
+        display: flex;
+        padding: 0 24px 12px 24px;
+        gap: 20px;
+        border-bottom: 1px solid var(--ig-border);
+    }
+
+    .ig-dm-nav-tabs button {
+        background: none;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ig-text-muted);
+        cursor: pointer;
+        padding-bottom: 4px;
+    }
+
+    .ig-dm-nav-tabs button.active {
+        color: var(--ig-text);
+        border-bottom: 2px solid var(--ig-text);
+    }
+
+    .ig-dm-conversations-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .ig-chat-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        position: relative;
+    }
+
+    .ig-chat-row:hover {
+        background: var(--ig-hover);
+    }
+
+    .ig-chat-row.active-chat {
+        background: var(--ig-hover);
+    }
+
+    .ig-chat-row.unread .ig-chat-name,
+    .ig-chat-row.unread .ig-chat-preview {
+        font-weight: 700 !important;
+        color: var(--ig-text) !important;
+    }
+
+    .ig-chat-options-wrapper {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .ig-chat-dots-btn {
+        background: none;
+        border: none;
+        color: var(--ig-text-muted);
+        cursor: pointer;
+        padding: 8px;
+        display: none;
+    }
+
+    .ig-chat-row:hover .ig-chat-dots-btn {
+        display: block;
+    }
+
+    .ig-chat-popup-menu {
+        display: none;
+        position: absolute;
+        right: 10px;
+        top: 35px;
+        background: #1e1e1e !important;
+        border: 1px solid var(--ig-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        z-index: 999999;
+        min-width: 180px;
+        overflow: hidden;
+    }
+
+    .ig-chat-menu-item {
+        display: block;
+        width: 100%;
+        padding: 12px 16px;
+        text-align: left;
+        background: none !important;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff !important;
+        cursor: pointer;
+    }
+
+    .ig-chat-menu-item.delete {
+        color: #ed4956 !important;
+    }
+
+    .ig-chat-menu-item:hover {
+        background: rgba(255,255,255,0.08) !important;
+    }
+
+    .ig-dm-chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--ig-bg);
+        height: 100vh;
+        box-sizing: border-box;
+    }
+
+    .ig-dm-empty-state {
+        margin: auto;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .ig-empty-plane-icon {
+        width: 96px;
+        height: 96px;
+        border: 2px solid var(--ig-text);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        color: var(--ig-text);
+        margin-bottom: 8px;
+    }
+
+    .ig-dm-empty-state h2 {
+        font-size: 22px;
+        font-weight: 400;
+        margin: 0;
+        color: var(--ig-text);
+    }
+
+    .ig-dm-empty-state p {
+        font-size: 14px;
+        color: var(--ig-text-muted);
+        margin: 0 0 16px 0;
+    }
+
+    .ig-send-message-action-btn {
+        background: var(--ig-primary);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .ig-active-dm-box {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .ig-active-dm-header {
+        padding: 14px 24px;
+        background: color-mix(in srgb, var(--ig-card-bg) 95%, #888888 5%);
+        border-bottom: 1px solid var(--ig-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    .ig-active-dm-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .ig-active-dm-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .ig-active-dm-messages-body {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .ig-active-dm-input-box {
+        padding: 16px 24px 24px 24px;
+        background: var(--ig-card-bg);
+    }
+
+    .ig-active-dm-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: var(--ig-input-bg);
+        border: 1px solid var(--ig-border);
+        border-radius: 24px;
+        padding: 10px 16px;
+        gap: 14px;
+    }
+
+    .ig-active-dm-input {
+        flex: 1;
+        background: none;
+        border: none;
+        outline: none;
+        color: var(--ig-text);
+        font-size: 14px;
+    }
+
+    .ig-active-dm-send-btn {
+        background: none;
+        border: none;
+        color: #0095f6;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 0 4px;
+    }
+
+    .ig-active-dm-send-btn:hover {
+        opacity: 0.8;
+    }
+
+    .ig-custom-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+    }
+
+    .ig-custom-modal-box {
+        width: 480px;
+        max-width: 90vw;
+        height: 450px;
+        background: #262626;
+        border: 1px solid var(--ig-border);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .ig-custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #363636;
+        padding-bottom: 14px;
+        margin-bottom: 16px;
+    }
+
+    .ig-custom-modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: #fff;
+    }
+
+    .ig-custom-close-btn {
+        background: none;
+        border: none;
+        color: var(--ig-text-muted);
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .ig-custom-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #121212;
+        border-radius: 10px;
+        padding: 10px 14px;
+        gap: 10px;
+    }
+
+    .ig-custom-search-input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        font-size: 14px;
+        color: #fff;
+        outline: none;
+    }
+
+    .ig-custom-modal-results {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .ig-msg-bubble-wrapper {
+        display: flex;
+        flex-direction: column;
+        position: relative !important;
+        margin-bottom: 8px;
+        width: 100%;
+    }
+
+    .ig-msg-bubble-wrapper.outgoing-wrap {
+        align-items: flex-end;
+    }
+
+    .ig-msg-bubble-wrapper.incoming-wrap {
+        align-items: flex-start;
+    }
+
+    .ig-bubble-row-inner {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+    }
+
+    .ig-msg-bubble-wrapper.outgoing-wrap .ig-bubble-row-inner {
+        flex-direction: row-reverse;
+    }
+
+    .ig-bubble {
+        max-width: 65%;
+        padding: 10px 14px 20px 14px;
+        border-radius: 18px;
+        font-size: 14px;
+        word-break: break-word;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+
+    .ig-bubble.incoming {
+        background: var(--ig-input-bg);
+        color: var(--ig-text);
+        border-bottom-left-radius: 4px;
+    }
+
+    .ig-bubble.outgoing {
+        background: #0095f6;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .ig-msg-time {
+        position: absolute;
+        bottom: 4px;
+        right: 10px;
+        font-size: 10px;
+        color: var(--ig-text-muted);
+        opacity: 0.8;
+    }
+
+    .ig-bubble.outgoing .ig-msg-time {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .ig-msg-options-trigger {
+        background: none;
+        border: none;
+        color: var(--ig-text-muted);
+        cursor: pointer;
+        font-size: 14px;
+        opacity: 1 !important;
+        padding: 4px;
+    }
+
+    .ig-msg-options-trigger:hover {
+        color: var(--ig-text);
+    }
+
+    .ig-msg-action-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        background: #1e1e1e !important;
+        border: 1px solid var(--ig-border);
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        z-index: 999999;
+        min-width: 140px;
+        overflow: hidden;
+    }
+
+    .ig-msg-bubble-wrapper.outgoing-wrap .ig-msg-action-menu {
+        right: 0;
+        left: auto;
+    }
+
+    .ig-msg-bubble-wrapper.incoming-wrap .ig-msg-action-menu {
+        left: 0;
+        right: auto;
+    }
+
+    .ig-msg-action-item {
+        display: block;
+        width: 100%;
+        padding: 10px 14px;
+        text-align: left;
+        background: none !important;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff !important;
+        cursor: pointer;
+    }
+
+    .ig-msg-action-item.delete {
+        color: #ed4956 !important;
+    }
+
+    .ig-msg-action-item:hover {
+        background: rgba(255,255,255,0.08) !important;
+    }
+
+    .ig-msg-sender-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        align-self: flex-end;
+        margin-bottom: 2px;
+        flex-shrink: 0;
+    }
+</style>
+
+<script>
+    let activeFullScreenUser = null;
+    let activeFullScreenPic = "";
+    let allConversationsCache = [];
+    let draftTimeout = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadFullScreenConversations();
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.ig-msg-options-trigger') && !e.target.closest('.ig-msg-action-menu')) {
+            document.querySelectorAll('.ig-msg-action-menu').forEach(m => {
+                m.style.display = 'none';
+            });
+        }
+        if (!e.target.closest('.ig-chat-dots-btn') && !e.target.closest('.ig-chat-popup-menu')) {
+            document.querySelectorAll('.ig-chat-popup-menu').forEach(m => {
+                m.style.display = 'none';
+            });
+        }
+    }, true);
+
+    function toggleNewChatModal() {
+        const modal = document.getElementById('newChatModal');
+        if (!modal) return;
+        const isOpen = modal.style.display === 'flex';
+        modal.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen) {
+            document.getElementById('newChatSearchInput').value = '';
+            document.getElementById('newChatSearchResults').innerHTML = '<div class="ig-search-placeholder">Mesaj göndermek istediğiniz kişiyi arayın...</div>';
+            setTimeout(() => document.getElementById('newChatSearchInput').focus(), 100);
+        }
+    }
+
+    function closeNewChatModalOnOutside(e) {
+        const modal = document.getElementById('newChatModal');
+        if (e.target === modal) modal.style.display = 'none';
+    }
+
+    function searchUsersForNewChat(query) {
+        const container = document.getElementById('newChatSearchResults');
+        if (!query || query.trim() === "") {
+            container.innerHTML = '<div class="ig-search-placeholder">Mesaj göndermek istediğiniz kişiyi arayın...</div>';
+            return;
+        }
+        fetch('/Home/SearchAllUsers?q=' + encodeURIComponent(query))
+            .then(res => res.json())
+            .then(users => {
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<div class="ig-search-placeholder">Kullanıcı bulunamadı.</div>';
+                    return;
+                }
+                let html = '';
+                users.forEach(u => {
+                    html += `
+                            <div class="ig-search-result-item" onclick="selectUserForChat('${u.username}', '${u.profilePicture}')" style="display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; cursor:pointer;">
+                                <img src="${u.profilePicture}" style="width:44px; height:44px; border-radius:50%; object-fit:cover;" />
+                                <div>
+                                    <span style="font-weight:600; font-size:14px; color:var(--ig-text); display:block;">${u.username}</span>
+                                    <span style="font-size:12px; color:var(--ig-text-muted);">${u.bio || ''}</span>
+                                </div>
+                            </div>`;
+                });
+                container.innerHTML = html;
+            });
+    }
+
+    function selectUserForChat(username, profilePic) {
+        toggleNewChatModal();
+        openFullScreenChat(username, profilePic);
+    }
+
+    function loadFullScreenConversations() {
+        fetch('/Home/GetConversations')
+            .then(res => res.json())
+            .then(response => {
+                allConversationsCache = response.conversations;
+                renderConversationsList(allConversationsCache);
+            });
+    }
+
+    function filterConversations(query) {
+        if (!query || query.trim() === "") {
+            renderConversationsList(allConversationsCache);
+            return;
+        }
+        const filtered = allConversationsCache.filter(c => c.username.toLowerCase().includes(query.toLowerCase()));
+        renderConversationsList(filtered);
+    }
+
+    function renderConversationsList(data) {
+        const container = document.getElementById('fullScreenChatList');
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:var(--ig-text-muted); margin-top:40px; font-size:13px;">Sohbet bulunamadı.</div>';
+            return;
+        }
+        let html = '';
+        data.forEach(conv => {
+            let activeClass = (activeFullScreenUser === conv.username) ? 'active-chat' : '';
+            let previewText = "";
+            if (conv.hasDraft) {
+                previewText = `<span style="color:#ed4956; font-weight:600;">Taslak: ${conv.draftContent}</span>`;
+            } else if (conv.isMuted) {
+                previewText = '<i class="fa-solid fa-bell-slash" style="font-size:11px; margin-right:4px;"></i> Sessize alındı';
+            } else {
+                previewText = `${conv.lastMessage} · ${conv.timeAgo}`;
+            }
+
+            let muteUnmuteText = conv.isMuted ? "Sessizden çıkar" : "Sessize al";
+            let muteActionType = conv.isMuted ? "unmute" : "mute";
+
+            html += `
+                    <div class="ig-chat-row ${conv.isRead || conv.hasDraft ? '' : 'unread'} ${activeClass}" onclick="openFullScreenChat('${conv.username}', '${conv.profilePicture}')">
+                        <div class="ig-chat-user-info" style="display:flex; align-items:center; gap:12px; width:100%; overflow:hidden;">
+                            <img src="${conv.profilePicture}" class="ig-chat-avatar" style="width:56px; height:56px; border-radius:50%; object-fit:cover; flex-shrink:0;" />
+                            <div class="ig-chat-details" style="display:flex; flex-direction:column; overflow:hidden;">
+                                <span class="ig-chat-name" style="font-size:14px; color:var(--ig-text);">${conv.username}</span>
+                                <span class="ig-chat-preview" style="font-size:13px; color:var(--ig-text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${previewText}</span>
+                            </div>
+                        </div>
+                        ${!conv.isRead && !conv.hasDraft ? '<div class="ig-unread-dot" style="width:8px; height:8px; background:var(--ig-primary); border-radius:50%; flex-shrink:0; margin-left:8px;"></div>' : ''}
+                        <div class="ig-chat-options-wrapper" onclick="event.stopPropagation()">
+                            <button type="button" class="ig-chat-dots-btn" onclick="toggleChatMenu(event, '${conv.username}')">
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </button>
+                            <div id="chat-menu-${conv.username}" class="ig-chat-popup-menu">
+                                <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', 'read')">Görüldü olarak işaretle</button>
+                                <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', '${muteActionType}')">${muteUnmuteText}</button>
+                                <button type="button" class="ig-chat-menu-item delete" onclick="updateMessageAction('${conv.username}', 'delete')">Sil</button>
+                            </div>
+                        </div>
+                    </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleChatMenu(event, username) {
+        event.stopPropagation();
+        document.querySelectorAll('.ig-chat-popup-menu').forEach(m => m.style.display = 'none');
+        const menu = document.getElementById(`chat-menu-${username}`);
+        if (menu) {
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+
+    function updateMessageAction(username, actionType) {
+        fetch('/Home/UpdateMessageAction?partnerUsername=' + encodeURIComponent(username) + '&actionType=' + actionType, {
+            method: 'POST'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    loadFullScreenConversations();
+                    if (activeFullScreenUser === username) {
+                        openFullScreenChat(activeFullScreenUser, activeFullScreenPic);
+                    }
+                }
+            });
+    }
+
+    function openFullScreenChat(username, profilePic) {
+        activeFullScreenUser = username;
+        activeFullScreenPic = profilePic;
+
+        fetch('/Home/MarkConversationAsRead?partnerUsername=' + encodeURIComponent(username), { method: 'POST' })
+            .then(() => loadFullScreenConversations());
+
+        fetch('/Home/GetChatMessages?partnerUsername=' + encodeURIComponent(username))
+            .then(res => res.json())
+            .then(data => {
+                const area = document.getElementById('fullScreenChatArea');
+                let msgsHtml = `
+                        <div class="ig-active-dm-box">
+                            <div class="ig-active-dm-header">
+                                <a href="/Home/Profile/${encodeURIComponent(username)}" class="ig-active-dm-user-info" style="text-decoration:none;">
+                                    <img src="${profilePic}" class="ig-active-dm-avatar" />
+                                    <span style="font-weight:600; font-size:16px; color:var(--ig-text);">${username}</span>
+                                </a>
+                                <div style="display:flex; gap:20px; color:var(--ig-text); font-size:20px; cursor:pointer;">
+                                    <i class="fa-solid fa-phone"></i>
+                                    <i class="fa-solid fa-video"></i>
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </div>
+                            </div>
+                            <div class="ig-active-dm-messages-body" id="fsChatScroll">`;
+
+                data.messages.forEach(m => {
+                    let senderVal = m.sender || m.SenderUsername || m.Sender || m.username || m.Username || "";
+                    let isOutgoing = senderVal.trim().toLowerCase() === "@currentUsername".toLowerCase();
+
+                    let bubbleClass = isOutgoing ? "outgoing" : "incoming";
+                    let wrapClass = isOutgoing ? "outgoing-wrap" : "incoming-wrap";
+
+                    let menuItems = `<button type="button" class="ig-msg-action-item delete" onclick="deleteFullScreenMessage('${m.id}', 'self')">Benden sil</button>`;
+                    if (isOutgoing) {
+                        menuItems += `<button type="button" class="ig-msg-action-item delete" onclick="deleteFullScreenMessage('${m.id}', 'everyone')">İki taraftan da sil</button>`;
+                    }
+
+                    let incomingAvatarHtml = !isOutgoing ? `
+                            <a href="/Home/Profile/${encodeURIComponent(username)}" style="flex-shrink:0;">
+                                <img src="${profilePic}" class="ig-msg-sender-avatar" />
+                            </a>` : '';
+
+                    let rawDate = m.date || m.Date || m.createdAt || m.CreatedAt || m.timestamp || m.Timestamp;
+
+                    msgsHtml += `
+                            <div class="ig-msg-bubble-wrapper ${wrapClass}">
+                                <div class="ig-bubble-row-inner">
+                                    ${incomingAvatarHtml}
+                                    <div class="ig-bubble ${bubbleClass}">
+                                        ${m.content}
+                                        <span class="ig-msg-time">${formatMessageTime(rawDate)}</span>
+                                    </div>
+                                    <button type="button" class="ig-msg-options-trigger" onclick="toggleFullScreenMenu(event, '${m.id}')">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                </div>
+                                <div id="fs-msg-menu-${m.id}" class="ig-msg-action-menu" onclick="event.stopPropagation()">
+                                    ${menuItems}
+                                </div>
+                            </div>`;
+                });
+
+                let draftVal = data.draft || "";
+                msgsHtml += `
+                            </div>
+                            <div class="ig-active-dm-input-box">
+                                <div class="ig-active-dm-input-wrapper">
+                                    <i class="fa-regular fa-face-smile" style="color:var(--ig-text); font-size:20px; cursor:pointer;"></i>
+                                    <input type="text" id="fsChatInput" class="ig-active-dm-input" placeholder="Mesaj gönder..." value="${draftVal}" oninput="handleDraftInput(this.value)" onkeypress="handleFSKey(event, '${username}')" autocomplete="off" spellcheck="false" autofocus />
+                                    <button type="button" class="ig-active-dm-send-btn" onclick="sendFullScreenMessage('${username}')">Gönder</button>
+                                    <i class="fa-regular fa-image" style="color:var(--ig-text); font-size:20px; cursor:pointer;"></i>
+                                    <i class="fa-regular fa-thumbs-up" style="color:var(--ig-text); font-size:20px; cursor:pointer;"></i>
+                                </div>
+                            </div>
+                        </div>`;
+
+                area.innerHTML = msgsHtml;
+                const scrollBox = document.getElementById('fsChatScroll');
+                if (scrollBox) scrollBox.scrollTop = scrollBox.scrollHeight;
+            });
+    }
+
+    function toggleFullScreenMenu(event, msgId) {
+        event.stopPropagation();
+        const menu = document.getElementById(`fs-msg-menu-${msgId}`);
+        if (!menu) return;
+
+        document.querySelectorAll('.ig-msg-action-menu').forEach(m => {
+            if (m.id !== `fs-msg-menu-${msgId}`) m.style.display = 'none';
+        });
+
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function deleteFullScreenMessage(msgId, deleteType) {
+        fetch('/Home/DeleteSingleMessage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `messageId=${msgId}&deleteType=${deleteType}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    openFullScreenChat(activeFullScreenUser, activeFullScreenPic);
+                    loadFullScreenConversations();
+                }
+            });
+    }
+
+    function handleDraftInput(val) {
+        clearTimeout(draftTimeout);
+        draftTimeout = setTimeout(() => {
+            if (!activeFullScreenUser) return;
+            fetch('/Home/SaveDraft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `receiverUsername=${encodeURIComponent(activeFullScreenUser)}&content=${encodeURIComponent(val)}`
+            });
+        }, 500);
+    }
+
+    function sendFullScreenMessage(username) {
+        const input = document.getElementById('fsChatInput');
+        if (!input || !input.value.trim()) return;
+        const text = input.value.trim();
+
+        fetch('/Home/SaveDraft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `receiverUsername=${encodeURIComponent(username)}&content=`
+        }).then(() => {
+            return fetch('/Home/SendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `receiverUsername=${encodeURIComponent(username)}&content=${encodeURIComponent(text)}`
+            });
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    openFullScreenChat(username, activeFullScreenPic);
+                    loadFullScreenConversations();
+                }
+            });
+    }
+
+    function handleFSKey(e, username) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendFullScreenMessage(username);
+        }
+    }
+
+    function formatMessageTime(dateString) {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "";
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

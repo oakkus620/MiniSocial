@@ -1,0 +1,526 @@
+﻿/* ==========================================================================
+   ONBOARDING (PROFIL TAMAMLAMA) - Detaing.css
+   ========================================================================== */
+
+/* 1. SAYFA VE BODY YUMUŞAK GEÇİŞİ */
+body {
+    background-image: url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    transition: background-image 0.4s ease, background-color 0.4s ease, color 0.4s ease !important;
+}
+
+    body.dark-mode {
+        background-color: #121212 !important;
+        --bg-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png');
+        background-image: var(--bg-image) !important;
+    }
+
+/* 2. GÖLGELİ, HAFİF SAYDAM VE ÇERÇEVESİZ ANA KART */
+.form-container.onboarding-container {
+    position: relative !important;
+    padding: 35px 40px !important;
+    border-radius: 24px !important;
+    margin: 40px auto !important;
+    width: 100% !important;
+    max-width: 620px !important;
+    /* Saydamlık + Buzlu Cam */
+    background-color: rgba(255, 255, 255, 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: var(--text-color, #212529) !important;
+    /* Sert Border Sıfırlandı */
+    border: none !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05) !important;
+    /* Renk ve Arka Plan Akıcı Geçişi */
+    transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease !important;
+    animation: fadeInUp 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards !important;
+}
+
+/* Koyu Modda Çerçevesiz Koyu Buzlu Cam */
+body.dark-mode .form-container.onboarding-container {
+    background-color: rgba(30, 30, 30, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: var(--text-color, #f8f9fa) !important;
+    border: none !important; /* Border sıfırlandı */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 3. BAŞLIK VE METİN GÖRÜNÜRLÜKLERİ */
+.onboarding-container .welcome-title {
+    font-size: 1.65rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+    color: var(--text-color, #212529) !important;
+}
+
+.onboarding-container .subtitle {
+    margin-bottom: 25px !important;
+    opacity: 0.85 !important;
+    color: var(--text-color, #212529) !important;
+}
+
+.onboarding-container .lbl,
+.onboarding-container label {
+    color: var(--text-color, #212529) !important;
+    font-weight: 600 !important;
+}
+
+/* 4. PROFİL FOTOĞRAFI ALANI */
+.profile-upload-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-bottom: 25px !important;
+}
+
+.profile-avatar-container {
+    position: relative !important;
+    width: 110px !important;
+    height: 110px !important;
+    border-radius: 50% !important;
+    border: 3px solid var(--border-color, #e0e0e0) !important;
+    padding: 3px !important;
+    background-color: var(--input-bg, #ffffff) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.4s ease !important;
+}
+
+body.dark-mode .profile-avatar-container {
+    background-color: #2a2a2a !important;
+    border-color: #444444 !important;
+}
+
+.profile-avatar-container img {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+/* Kamera Butonu */
+.avatar-edit-btn {
+    position: absolute !important;
+    bottom: 2px !important;
+    right: 2px !important;
+    width: 32px !important;
+    height: 32px !important;
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid #cccccc !important;
+    transition: transform 0.2s ease, background-color 0.2s ease !important;
+}
+
+    .avatar-edit-btn:hover {
+        transform: scale(1.1) !important;
+        background-color: #f8f9fa !important;
+        color: #0d6efd !important;
+    }
+
+    .avatar-edit-btn svg {
+        width: 15px !important;
+        height: 15px !important;
+        fill: #212529 !important;
+        display: block !important;
+    }
+
+body.dark-mode .avatar-edit-btn {
+    background-color: #2b2b2b !important;
+    border-color: #444444 !important;
+}
+
+    body.dark-mode .avatar-edit-btn svg {
+        fill: #ffffff !important;
+    }
+
+/* Fotoğrafı Kaldır Rozeti */
+.btn-remove-photo {
+    background: rgba(220, 53, 69, 0.12) !important;
+    color: #dc3545 !important;
+    border: 1px solid rgba(220, 53, 69, 0.3) !important;
+    padding: 5px 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    margin-top: 12px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+    .btn-remove-photo:hover {
+        background: rgba(220, 53, 69, 0.25) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    .btn-remove-photo svg {
+        width: 13px;
+        height: 13px;
+        fill: currentColor;
+    }
+
+/* 5. BİYOGRAFİ KUTUSU */
+.bio-wrapper {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.bio-textarea {
+    height: 90px !important;
+    resize: none !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    font-size: 0.9rem !important;
+    background-color: var(--input-bg, #ffffff) !important;
+    color: var(--text-color, #212529) !important;
+    border: 1px solid var(--border-color, #cccccc) !important;
+    text-decoration: none !important;
+    transition: all 0.4s ease !important;
+}
+
+    .bio-textarea::placeholder {
+        color: var(--arrow-color, #888888) !important;
+        opacity: 0.7;
+    }
+
+body.dark-mode .bio-textarea {
+    background-color: #2a2a2a !important;
+    color: #ffffff !important;
+    border-color: #444444 !important;
+}
+
+    body.dark-mode .bio-textarea::placeholder {
+        color: #aaaaaa !important;
+    }
+
+.char-count {
+    position: absolute;
+    right: 12px;
+    bottom: -20px;
+    font-size: 0.72rem;
+    opacity: 0.75;
+    color: var(--text-color, #212529) !important;
+}
+
+/* 6. İLGİ ALANLARI GRID */
+.interests-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 15px !important;
+    margin-bottom: 25px !important;
+}
+
+.interest-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    background-color: transparent !important;
+    transition: background-color 0.25s ease !important;
+}
+
+    .interest-card:hover {
+        background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.04)) !important;
+    }
+
+.interest-circle {
+    position: relative !important;
+    width: 85px !important;
+    height: 85px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    margin-bottom: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    transition: transform 0.25s ease !important;
+}
+
+.interest-card:hover .interest-circle {
+    transform: scale(1.05) !important;
+}
+
+.interest-circle img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+.interest-circle .overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(40, 167, 69, 0.85) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0 !important;
+    transition: opacity 0.25s ease !important;
+}
+
+.interest-circle .checkmark-bg {
+    width: 34px;
+    height: 34px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transform: scale(0.4);
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.interest-circle .checkmark-svg {
+    width: 18px;
+    height: 18px;
+    stroke: #28a745;
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.interest-card.selected .overlay {
+    opacity: 1 !important;
+}
+
+.interest-card.selected .checkmark-bg {
+    transform: scale(1) !important;
+}
+
+.interest-title {
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    color: var(--text-color, #212529) !important;
+    display: block !important;
+}
+
+.interest-desc {
+    font-size: 0.74rem !important;
+    opacity: 0.75 !important;
+    color: var(--text-color, #212529) !important;
+    display: block !important;
+}
+
+/* 7. ALT BUTON VE "ŞİMDİLİK ATLA" LİNKİ */
+.onboarding-container .registerButton {
+    width: 100% !important;
+    height: 50px !important;
+    border-radius: 15px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    margin-top: 10px !important;
+    margin-bottom: 5px !important;
+}
+
+.onboarding-container .bottom-link {
+    text-align: center !important;
+    margin-top: 12px !important;
+}
+
+.onboarding-container .skip-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 8px 20px !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    color: var(--arrow-color, #6c757d) !important;
+    text-decoration: none !important;
+    border-radius: 12px !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: all 0.25s ease !important;
+}
+
+    .onboarding-container .skip-link:hover {
+        color: var(--text-color, #212529) !important;
+        background-color: var(--item-hover-bg, rgba(0, 0, 0, 0.06)) !important;
+        border: none !important;
+    }
+
+body.dark-mode .onboarding-container .skip-link:hover {
+    color: #ffffff !important;
+    background-color: var(--item-hover-bg, rgba(255, 255, 255, 0.1)) !important;
+    border: none !important;
+}
+
+.onboarding-container .skip-arrow {
+    display: inline-block !important;
+    font-size: 1rem !important;
+    transition: transform 0.2s ease !important;
+}
+
+.onboarding-container .skip-link:hover .skip-arrow {
+    transform: translateX(4px) !important;
+}
+
+/* 8. TEMA BUTONU (ÇERÇEVESİZ & AKICI YUMUŞAK GEÇİŞ) */
+/* ==========================================================================
+   8. TEMA BUTONU (ÇERÇEVESİZ & GERÇEK YUMUŞAK GEÇİŞLİ)
+   ========================================================================== */
+.theme-toggle-btn {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    padding: 0 18px !important;
+    width: auto !important;
+    min-width: 150px !important;
+    height: 42px !important;
+    border-radius: 21px !important;
+    /* Border tamamen sıfır */
+    border: none !important;
+    outline: none !important;
+    /* Açık Temada Saydamlık */
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: var(--text-color, #212529) !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+    z-index: 999999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    /* HER TÜRLÜ DEĞİŞİMİ (Renk, Genişlik, Gölge) 0.5 SANİYEDE SÜZÜLEREK YAPAR */
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+    .theme-toggle-btn .theme-text,
+    .theme-toggle-btn .theme-icon {
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+/* Koyu Modda Buton (Çerçevesiz ve Yumuşak Renk Geçişli) */
+body.dark-mode .theme-toggle-btn {
+    background-color: rgba(43, 43, 43, 0.85) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+@media (max-width: 768px) {
+    .theme-toggle-btn {
+        top: 15px !important;
+        right: 15px !important;
+        left: auto !important;
+        padding: 0 !important;
+        width: 42px !important;
+        min-width: 42px !important;
+        height: 42px !important;
+        border-radius: 21px !important;
+        gap: 0 !important;
+    }
+
+        .theme-toggle-btn .theme-icon {
+            font-size: 1.2rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .theme-toggle-btn .theme-text {
+            max-width: 0px !important;
+            opacity: 0 !important;
+            transform: scale(0.7) !important;
+        }
+
+        .theme-toggle-btn:hover {
+            width: 145px !important;
+            min-width: 145px !important;
+            padding: 0 14px !important;
+            justify-content: flex-start !important;
+        }
+
+            .theme-toggle-btn:hover .theme-text {
+                max-width: 100px !important;
+                opacity: 1 !important;
+                transform: scale(1) !important;
+                margin-left: 6px !important;
+            }
+}
+
+
+/* ==========================================================================
+   DARK MODE NET BEYAZLATMA VE RENK EZME YAMASI
+   ========================================================================== */
+
+body.dark-mode .onboarding-container .welcome-title,
+body.dark-mode .onboarding-container .subtitle,
+body.dark-mode .onboarding-container .lbl,
+body.dark-mode .onboarding-container label,
+body.dark-mode .onboarding-container h2,
+body.dark-mode .onboarding-container h5,
+body.dark-mode .onboarding-container .interest-title,
+body.dark-mode .onboarding-container .interest-desc,
+body.dark-mode .onboarding-container .char-count {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+body.dark-mode .onboarding-container .subtitle,
+body.dark-mode .onboarding-container .interest-desc,
+body.dark-mode .onboarding-container .char-count {
+    color: rgba(255, 255, 255, 0.8) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.dark-mode .btn-remove-photo,
+body.dark-mode .btn-remove-photo * {
+    color: #dc3545 !important;
+    -webkit-text-fill-color: #dc3545 !important;
+}
+
+body.dark-mode .registerButton {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* ==========================================================================
+   SAYFA GEÇİŞ VE YÜKLENME ANİMASYONU
+   ========================================================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body.page-exit .form-container.onboarding-container {
+    opacity: 0 !important;
+    transform: translateY(-20px) !important;
+    transition: opacity 0.35s ease, transform 0.35s ease !important;
+}

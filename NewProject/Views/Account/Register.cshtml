@@ -1,0 +1,151 @@
+﻿<!-- Gece/Gündüz Modu Butonu -->
+<button class="theme-toggle-btn" id="themeToggleBtn">
+    <span class="theme-icon">🌙</span>
+    <span class="theme-text">Koyu Tema</span>
+</button>
+
+<div class="container">
+    <div class="form-container">
+        <form action="/Account/Register" method="post" id="registerForm">
+
+            <!-- Başlık ve Geri Dön Butonu -->
+            <div class="header-container">
+                <a href="/Account/Login" class="back-btn" title="Giriş Sayfasına Dön">
+                    <span class="chevron-left"></span>
+                </a>
+                <h2 class="welcome-title">Hesap Oluştur</h2>
+            </div>
+            <p class="subtitle">Aramıza katılmak için bilgilerini doldur</p>
+
+            <!-- Ad Soyad -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control fm" id="adSoyadInput" name="adSoyad" placeholder=" " required spellcheck="false" autocomplete="off">
+                <label class="lbl" for="adSoyadInput">Ad Soyad</label>
+            </div>
+
+            <!-- Kullanıcı Adı -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control fm" id="usernameInput" name="username" placeholder=" " spellcheck="false" autocomplete="off" required>
+                <label class="lbl" for="usernameInput">Kullanıcı Adı</label>
+                <span id="usernameStatusIcon" class="status-icon"></span>
+                <small id="usernameFeedback" class="feedback-text"></small>
+            </div>
+
+            <!-- Email -->
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control fm" id="emailInput" name="email" placeholder=" " spellcheck="false" autocomplete="off" required>
+                <label class="lbl" for="emailInput">Email</label>
+                <span id="emailStatusIcon" class="status-icon"></span>
+                <small id="emailFeedback" class="feedback-text"></small>
+            </div>
+
+            <!-- ÖZEL TASARIMLI DOĞUM GÜNÜ SEÇİMİ (13 Yaş Sınırlı) -->
+            <div class="mb-3">
+                <label class="birth-label mb-2">Doğum Tarihi</label>
+                <div class="row g-2">
+
+                    <!-- Form Gönderildiğinde Değerleri Taşıyacak Gizli Input'lar -->
+                    <input type="hidden" name="birthDay" id="selectedDay" required />
+                    <input type="hidden" name="birthMonth" id="selectedMonth" required />
+                    <input type="hidden" name="birthYear" id="selectedYear" required />
+
+                    <!-- Gün Dropdown -->
+                    <div class="col-4">
+                        <div class="custom-dropdown" id="dropdownDay">
+                            <div class="dropdown-header">
+                                <span class="header-text">Gün</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="dropdown-list">
+                                @for (int i = 1; i <= 31; i++)
+                                {
+                                    <div class="dropdown-item" data-value="@i">@i</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ay Dropdown -->
+                    <div class="col-4">
+                        <div class="custom-dropdown" id="dropdownMonth">
+                            <div class="dropdown-header">
+                                <span class="header-text">Ay</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="dropdown-list">
+                                @{
+                                    var aylarla = new string[] { "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık" };
+                                    for (int i = 0; i < aylarla.Length; i++)
+                                    {
+                                        <div class="dropdown-item" data-value="@(i + 1)">@aylarla[i]</div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yıl Dropdown (2026'dan 1940'a Kadar Görünür) -->
+                    <div class="col-4">
+                        <div class="custom-dropdown" id="dropdownYear">
+                            <div class="dropdown-header">
+                                <span class="header-text">Yıl</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="dropdown-list">
+                                @for (int i = DateTime.Now.Year; i >= 1940; i--)
+                                {
+                                    <div class="dropdown-item" data-value="@i">@i</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <small id="birthDateFeedback" class="feedback-text"></small>
+            </div>
+
+            <!-- Şifre -->
+            <div class="form-floating mb-3 position-relative">
+                <input type="password" class="form-control fm" id="password" name="password" placeholder=" " spellcheck="false" required>
+                <label class="lbl" for="password">Şifre</label>
+
+                <span class="toggle-password" onclick="togglePasswordVisibility('password', this)" title="Şifreyi Göster/Gizle">
+                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+
+                <span id="passwordStatusIcon" class="status-icon"></span>
+                <small id="passwordFeedback" class="feedback-text"></small>
+            </div>
+
+            <!-- Şifre Tekrarı -->
+            <div class="form-floating mb-3 position-relative">
+                <input type="password" class="form-control fm" id="confirmPassword" name="confirmPassword" placeholder=" " spellcheck="false" required>
+                <label class="lbl" for="confirmPassword">Şifre Tekrarı</label>
+
+                <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)" title="Şifreyi Göster/Gizle">
+                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </span>
+
+                <span id="confirmPasswordStatusIcon" class="status-icon"></span>
+                <small id="confirmPasswordFeedback" class="feedback-text"></small>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary registerButton" id="registerButton" disabled>Kayıt Ol</button>
+            </div>
+
+            <div class="bottom-link">
+                Zaten bir hesabın var mı? <a href="/Account/Login" class="back-btn-link">Giriş Yap</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<link rel="stylesheet" href="~/css/register.css?v=99.9" />
+<script src="~/js/register-validation-v2.js"></script>

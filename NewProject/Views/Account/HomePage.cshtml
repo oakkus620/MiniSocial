@@ -1,0 +1,194 @@
+﻿@model IEnumerable<PostModels>
+@{
+    ViewData["Title"] = "Ana Sayfa";
+    // Oturumdaki aktif kullanıcı adı (Sil/Düzenle yetkisi için)
+    string currentUsername = Context.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+}
+
+<!-- TEKRAR KULLANDIĞIMIZ TEMA BUTONU -->
+<button id="themeToggleBtn" class="theme-toggle-btn">
+    <span class="theme-icon">🌙</span>
+    <span class="theme-text">Koyu Tema</span>
+</button>
+
+<div class="instagram-layout">
+    <!-- SOL SABİT MENÜ (SIDEBAR) -->
+    <nav class="left-sidebar">
+        <h2 class="sidebar-logo">Sosyal Medya</h2>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="/Home/Index" class="menu-item active">
+                    <span class="menu-icon"><i class="fa-solid fa-house"></i></span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item">
+                    <span class="menu-icon"><i class="fa-solid fa-compass"></i></span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item">
+                    <span class="menu-icon"><i class="fa-solid fa-bell"></i></span>
+                </a>
+            </li>
+            <li>
+                <a href="/Account/Logout" class="menu-item">
+                    <span class="menu-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- ORTA AKIŞ (FEED) -->
+    <main class="main-feed">
+        <!-- HİKAYELER ŞERİDİ (Kendi Profil Fotoğrafın Burada Görünür) -->
+        <div class="stories-container">
+            <div class="story-item">
+                <div class="story-ring">
+                    <div class="story-avatar">
+                        <img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" alt="Hikayen" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+                    </div>
+                </div>
+                <span class="story-name">Hikayen</span>
+            </div>
+            <div class="story-item">
+                <div class="story-ring"><div class="story-avatar"></div></div>
+                <span class="story-name">yazilim_gunlugu</span>
+            </div>
+            <div class="story-item">
+                <div class="story-ring"><div class="story-avatar"></div></div>
+                <span class="story-name">backend_pro</span>
+            </div>
+        </div>
+
+        <!-- GÖNDERİ ATMA KUTUSU (Fotoğraf/Video ve Metin Destekli) -->
+        <div class="create-post-card" style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <form asp-action="CreatePost" method="post" enctype="multipart/form-data" id="postForm">
+                <textarea name="content" class="post-textarea" placeholder="Aklında ne var, @currentUsername?" style="width:100%; border:none; resize:none; outline:none; font-size:14px;" rows="3" required></textarea>
+
+                <div class="post-actions" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #efefef; padding-top: 10px; margin-top: 5px;">
+                    <!-- Dosya Yükleme Butonu -->
+                    <label for="postMediaInput" style="cursor: pointer; color: #0095f6; font-size: 14px; font-weight: 500;">
+                        📷 Fotoğraf / Video Ekle
+                    </label>
+                    <input type="file" id="postMediaInput" name="postMedia" accept="image/*,video/*" style="display: none;" />
+
+                    <button type="submit" class="share-btn" style="background: #0095f6; color: white; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">Gönderi Paylaş</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- GÖNDERİLER LİSTESİ -->
+        @foreach (var post in Model)
+        {
+            var fark = DateTime.Now - post.Date;
+            string zamanfarkı = "";
+            if (fark.TotalMinutes < 1)
+            {
+                zamanfarkı = "Az önce";
+            }
+            else if (fark.TotalHours < 1)
+            {
+                zamanfarkı = $"{(int)fark.TotalMinutes} dakika önce";
+            }
+            else if (fark.TotalDays < 1)
+            {
+                zamanfarkı = $"{(int)fark.TotalHours} saat önce";
+            }
+            else
+            {
+                zamanfarkı = $"{(int)fark.TotalDays} gün önce";
+            }
+
+            <div class="post-card" style="background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative;">
+
+                <!-- GÖNDERİ HEADER -->
+                <div class="post-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="post-user-avatar" style="width: 35px; height: 35px; background: #ddd; border-radius: 50%;"></div>
+                        <div>
+                            <strong style="font-size: 14px;">@post.Username</strong><br />
+                            <span class="text-muted" style="font-size: 11px; color: gray;">@zamanfarkı</span>
+                        </div>
+                    </div>
+
+                    <!-- EĞER BU POST KULLANICIYA AİTSE SAĞ ÜSTTE ÜÇ NOKTA (SİL / DÜZENLE) -->
+                    @if (post.Username == currentUsername)
+                    {
+                        <div class="dropdown" style="position: relative;">
+                            <button class="options-btn" onclick="toggleMenu('@post.Id')" style="background: none; border: none; cursor: pointer; font-size: 18px; font-weight: bold;">⋮</button>
+                            <div id="menu-@post.Id" class="dropdown-menu-custom" style="display: none; position: absolute; right: 0; background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; width: 100px;">
+                                <a href="/Home/DeletePost/@post.Id" style="display: block; padding: 8px 12px; color: #ed4956; text-decoration: none; font-size: 13px;">Sil</a>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- GÖNDERİ İÇERİĞİ -->
+                <div class="post-body">
+                    <p style="font-size: 14px; margin-bottom: 10px;">@post.Content</p>
+
+                    <!-- MEDYA VARSA GÖSTER (FOTO/VİDEO) -->
+                    @if (!string.IsNullOrEmpty(post.MediaUrl))
+                    {
+                        <div class="post-media-container" style="margin-bottom: 10px; text-align: center; background: #000; border-radius: 8px; overflow: hidden;">
+                            @if (post.MediaType == "video")
+                            {
+                                <video controls style="max-width: 100%; max-height: 400px; display: block; margin: 0 auto;">
+                                    <source src="@post.MediaUrl" type="video/mp4">
+                                </video>
+                            }
+                            else
+                            {
+                                <img src="@post.MediaUrl" alt="Post Medya" style="max-width: 100%; max-height: 400px; object-fit: cover; display: block; margin: 0 auto;" />
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- BEĞEN VE YORUM BUTONLARI -->
+                <div class="post-footer" style="display: flex; gap: 15px; border-top: 1px solid #efefef; padding-top: 10px; margin-top: 10px;">
+                    <button class="action-btn like-btn" style="background: none; border: none; cursor: pointer; font-size: 14px;">❤️ Beğen</button>
+                    <button class="action-btn comment-btn" style="background: none; border: none; cursor: pointer; font-size: 14px;">💬 Yorum</button>
+                </div>
+            </div>
+        }
+    </main>
+
+    <!-- SAĞ PROFİL ÖZETİ (Giriş Yapan Kullanıcının Bilgileriyle) -->
+    <aside class="right-sidebar">
+        <div class="profile-box" style="display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px;">
+            <div class="profile-big-avatar" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: #ddd;">
+                <img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" alt="Profil" style="width:100%; height:100%; object-fit:cover;" />
+            </div>
+            <div class="profile-details">
+                <span class="profile-handle" style="font-weight: 600; display: block;">@(ViewBag.ActiveUser != null ? ViewBag.ActiveUser.Username : User.Identity.Name)</span>
+                <span class="profile-subtext" style="font-size: 12px; color: gray;">@(ViewBag.ActiveUser != null ? ViewBag.ActiveUser.Bio : "Backend Geliştirici")</span>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- Üç Nokta Menüsünü Açıp Kapatmak İçin Küçük JavaScript -->
+<script>
+    function toggleMenu(id) {
+        var menu = document.getElementById('menu-' + id);
+        if (menu.style.display === 'none') {
+            // Açık olan diğer menüleri kapat
+            document.querySelectorAll('.dropdown-menu-custom').forEach(m => m.style.display = 'none');
+            menu.style.display = 'block';
+        } else {
+            menu.style.display = 'none';
+        }
+    }
+
+    // Sayfada başka bir yere tıklanınca menüyü kapat
+    window.onclick = function(event) {
+        if (!event.target.matches('.options-btn')) {
+            document.querySelectorAll('.dropdown-menu-custom').forEach(m => m.style.display = 'none');
+        }
+    }
+</script>
+
+<link rel="stylesheet" href="~/css/Home.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

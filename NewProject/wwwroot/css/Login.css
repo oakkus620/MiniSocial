@@ -1,0 +1,430 @@
+﻿/* BURADA ÖZELLİKLER MEVCUTTUR. */
+
+/* 1. TEMA DEĞİŞKENLERİ */
+:root {
+    --bg-image: url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png');
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-color: #212529;
+    --input-bg: #ffffff;
+    --border-color: #cccccc;
+    --btn-pass-color: #212529;
+    --btn-pass-border: #212529;
+    /* AÇIK TEMADA HOVER RENKLERİ */
+    --btn-pass-hover-bg: rgba(0, 0, 0, 0.08);
+    --btn-pass-hover-border: #000000;
+}
+
+body.dark-mode {
+    --bg-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/images/Gemini_Generated_Image_iv3yohiv3yohiv3y.png');
+    --card-bg: rgba(20, 20, 20, 0.85);
+    --text-color: #f8f9fa;
+    --input-bg: #2b2b2b;
+    --border-color: #444444;
+    --btn-pass-color: #ffffff;
+    --btn-pass-border: #ffffff;
+    /* KOYU TEMADA HOVER RENKLERİ */
+    --btn-pass-hover-background: rgba(255, 255, 255, 0.2);
+    --btn-pass-hover-border: #ffffff;
+}
+
+/* 2. GENEL ARKA PLAN VE GOVDE */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    transition: background 0.4s ease;
+    position: relative;
+}
+
+/* 3. KART / FORM KONTEYNERİ */
+.form-container {
+    position: relative;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    margin: 80px auto;
+    width: 100%;
+    max-width: 450px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    transition: all 0.4s ease;
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* 4. BAŞLIK VE YAZILAR */
+.welcome-title {
+    font-family: 'Segoe UI', sans-serif;
+    cursor: default;
+    color: var(--text-color);
+}
+
+.lbl {
+    color: var(--text-color) !important;
+    transition: color 0.4s ease;
+}
+
+.bottom-link {
+    text-align: center;
+    margin-top: 20px;
+    cursor: default;
+    color: var(--text-color);
+}
+
+    .bottom-link a {
+        text-decoration: none;
+        padding: 5px;
+        font-weight: bold;
+    }
+
+/* 5. INPUT KUTULARI TEMASI */
+.form-control.fm {
+    background-color: var(--input-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color);
+    text-align: left;
+    height: 50px;
+    border-radius: 15px;
+    transition: all 0.4s ease;
+}
+
+/* 6. BUTONLAR */
+.registerButton {
+    border: none;
+    color: white;
+    padding: 12px 32px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    width: 94%;
+    height: 50px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+}
+
+/* ŞİFREMİ UNUTTUM BUTONU */
+.passwordButton {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: var(--text-color) !important;
+    padding: 0 !important;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 95% !important;
+    height: 50px !important;
+    border-radius: 20px !important;
+    margin: 0 auto 10px auto !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.4s ease, color 0.4s ease !important;
+}
+
+    /* AÇIK TEMADA HOVER */
+    .passwordButton:hover {
+        background-color: #ced4da !important;
+        color: dimgrey !important;
+        text-decoration: none !important;
+    }
+
+/* KOYU TEMADA HOVER */
+body.dark-mode .passwordButton:hover {
+    background-color: #3d3d3d !important;
+    color: #ffffff !important;
+}
+
+.passwordButton:active {
+    opacity: 0.8;
+}
+
+/* 7. MASAÜSTÜ TEMA BUTONU STİLİ */
+.theme-toggle-btn {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    padding: 0 16px !important;
+    width: 160px !important;
+    height: 42px !important;
+    border-radius: 21px !important;
+    border: none !important;
+    outline: none !important;
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    z-index: 999999 !important;
+    transform: translateZ(9999px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease !important;
+}
+
+    .theme-toggle-btn .theme-text {
+        display: inline-block !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        max-width: 120px !important;
+        opacity: 1 !important;
+        transform: scale(1) !important;
+        transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, transform 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+/* DAR EKRANLARDA (768px VE ALTI) DAİRESEL FORMA SÜZÜLME */
+@media (max-width: 768px) {
+    .theme-toggle-btn {
+        top: 15px !important;
+        right: 15px !important;
+        left: auto !important;
+        padding: 0 !important;
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 21px !important;
+        gap: 0 !important;
+    }
+
+        .theme-toggle-btn .theme-icon {
+            font-size: 1.2rem !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .theme-toggle-btn .theme-text {
+            max-width: 0px !important;
+            opacity: 0 !important;
+            transform: scale(0.8) !important;
+        }
+
+        .theme-toggle-btn:hover {
+            width: 160px !important;
+            padding: 0 14px !important;
+            justify-content: flex-start !important;
+        }
+
+            .theme-toggle-btn:hover .theme-text {
+                max-width: 120px !important;
+                opacity: 1 !important;
+                transform: scale(1) !important;
+                margin-left: 6px !important;
+            }
+}
+
+.form-floating > label::after {
+    background-color: transparent !important;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+}
+
+.dark-mode .passwordButton {
+    color: #ffffff !important;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--input-bg) inset !important;
+    -webkit-text-fill-color: var(--text-color) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark-mode input[type="password"]::-ms-reveal {
+    filter: invert(1) !important;
+}
+
+input[type="password"]::-ms-reveal {
+    filter: invert(0) !important;
+    opacity: 0.7 !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-container.fade-out {
+    animation: fadeOutDown 0.3s ease-in forwards !important;
+}
+
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
+
+/* ==========================================================================
+   8. FORM İLE BÜTÜNLEŞEN MİNİ KART UYARI PENCERESİ
+   ========================================================================== */
+.alert-custom {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    margin-bottom: 24px;
+    background-color: var(--input-bg, #ffffff);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    animation: alertPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+    .alert-custom::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 16px 0 0 16px;
+    }
+
+/* Başarı Kutusu (Yeşil Kart) */
+.alert-custom-success {
+    border: 1px solid rgba(40, 167, 69, 0.25);
+    color: #155724;
+}
+
+    .alert-custom-success::before {
+        background-color: #28a745;
+    }
+
+    .alert-custom-success .alert-icon {
+        color: #28a745;
+        background-color: rgba(40, 167, 69, 0.12);
+    }
+
+/* Hata Kutusu (Kırmızı Kart) */
+.alert-custom-danger {
+    border: 1px solid rgba(220, 53, 69, 0.25);
+    color: #721c24;
+}
+
+    .alert-custom-danger::before {
+        background-color: #dc3545;
+    }
+
+    .alert-custom-danger .alert-icon {
+        color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.12);
+    }
+
+/* Bilgi Kutusu (Mavi Kart) */
+.alert-custom-info {
+    border: 1px solid rgba(13, 110, 253, 0.25);
+    color: #0c5460;
+}
+
+    .alert-custom-info::before {
+        background-color: #0d6efd;
+    }
+
+    .alert-custom-info .alert-icon {
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.12);
+    }
+
+/* İkon Yuvarlağı */
+.alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+/* DARK MODE UYUMU */
+body.dark-mode .alert-custom {
+    background-color: var(--input-bg, #2b2b2b);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .alert-custom-success {
+    border-color: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+}
+
+    body.dark-mode .alert-custom-success .alert-icon {
+        background-color: rgba(46, 204, 113, 0.2);
+    }
+
+body.dark-mode .alert-custom-danger {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ff6b6b;
+}
+
+    body.dark-mode .alert-custom-danger .alert-icon {
+        background-color: rgba(239, 68, 68, 0.2);
+    }
+
+body.dark-mode .alert-custom-info {
+    border-color: rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+}
+
+    body.dark-mode .alert-custom-info .alert-icon {
+        background-color: rgba(56, 189, 248, 0.2);
+    }
+
+/* Kaybolma / Süzülme Sekansı */
+.alert-custom.fade-hide {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.95);
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    max-height: 0 !important;
+    border: none !important;
+}
+
+/* Belirme Animasyonu (Pop-In) */
+@keyframes alertPopIn {
+    from {
+        opacity: 0;
+        transform: translateY(-15px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

@@ -1,0 +1,64 @@
+﻿@*    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860*@
+@{
+    ViewData["Title"] = "E-posta Doğrulama";
+}
+<!-- Gece/Gündüz Modu Butonu -->
+<button class="theme-toggle-btn" id="themeToggleBtn">
+    <span class="theme-icon">🌙</span>
+    <span class="theme-text">Koyu Tema</span>
+</button>
+
+<div class="container">
+    <div class="form-container">
+        <!-- Hata veya Bilgi Mesajları -->
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert-custom alert-custom-danger">
+                <div class="alert-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <span>@ViewBag.ErrorMessage</span>
+            </div>
+        }
+
+        <form action="/Account/ConfirmEmail" method="post">
+            <div style="text-align: center; margin-bottom: 25px">
+                <h2 style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" class="welcome-title">E-posta Doğrulama</h2>
+                <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">
+                    <strong>@ViewBag.Email</strong> adresine gönderilen 6 haneli onay kodunu giriniz.
+                </p>
+            </div>
+
+            <!-- 6 Haneli Kod Girme Kutusu -->
+            <div class="otp-container">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" required>
+            </div>
+
+            <!-- Form gönderildiğinde 6 kutudaki rakamları birleştirip backend'e aktaracak gizli input -->
+            <input type="hidden" name="inputCode" id="finalVerificationCode">
+
+            <div class="text-center mt-4">
+                <!-- HATA BURADAYDI: formaction silindi! Şimdi direkt ConfirmEmail'e gidecek, -->
+                <!-- ConfirmEmail de işlemi bitirip seni otomatik olarak Detaing'e atacak! -->
+                <button type="submit" class="btn btn-primary registerButton" id="confirmButton">Kodu Onayla</button>
+            </div>
+
+            <div class="bottom-link">
+                Kodu almadınız mı? <a href="/Account/Register">Kayıt Ekranına Dön</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Özel CSS/JS dosyalarını silip bunları ekle -->
+<link rel="stylesheet" href="~/css/register.css" />
+<script src="~/js/register-validation-v2.js"></script>

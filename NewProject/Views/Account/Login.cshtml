@@ -1,0 +1,69 @@
+﻿@{
+    ViewData["Title"] = "Giriş Yap";
+}
+
+<!-- Gece/Gündüz Modu Butonu -->
+<button class="theme-toggle-btn" id="themeToggleBtn">
+    <span class="theme-icon">🌙</span>
+    <span class="theme-text">Koyu Tema</span>
+</button>
+
+<div class="container">
+    <div class="form-container">
+
+        <!-- BAŞARI MESAJI -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert-custom alert-custom-success">
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+        }
+
+        <!-- BİLGİ MESAJI -->
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert-custom alert-custom-info">
+                <span>@TempData["InfoMessage"]</span>
+            </div>
+        }
+
+        <!-- HATA MESAJI -->
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert-custom alert-custom-danger">
+                <span>@ViewBag.ErrorMessage</span>
+            </div>
+        }
+
+        <!-- DOĞRU ACTION VE METOT TANIMI -->
+        <form asp-action="Login" asp-controller="Account" method="post">
+            <div style="text-align: center; margin-bottom: 40px">
+                <h2 style="font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" class="welcome-title">Giriş Yap</h2>
+            </div>
+
+            <!-- name="emailOrUsername" eklendi ki Controller bunu okuyabilsin -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control fm" id="emailOrUsername" name="emailOrUsername" placeholder=" " required>
+                <label class="lbl" for="emailOrUsername">E-posta veya Kullanıcı Adı</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control fm" id="password" name="password" placeholder=" " required>
+                <label class="lbl" for="password">Şifre</label>
+            </div>
+
+            <div class="text-center mt-4">
+                <!-- formaction silindi, standart submit butonu yapıldı -->
+                <button type="submit" class="btn btn-primary registerButton" id="registerButton">Giriş Yap</button>
+                <a href="#" class="passwordButton">Şifremi Unuttum</a>
+            </div>
+
+            <div class="bottom-link">
+                Hesabın yok mu? <a href="/Account/Register">Hemen Kayıt Ol</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="~/js/Login.js"></script>
+<link rel="stylesheet" href="~/css/Login.css" />

@@ -1,0 +1,1714 @@
+﻿@inject NewProject.Data.AppDbContext _context
+@model IEnumerable<PostModels>
+@{
+    ViewData["Title"] = ViewBag.ProfileUsername + " • Profil";
+    string currentUsername = Context.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+
+    bool isMyProfile = ViewBag.IsMyProfile != null && (bool)ViewBag.IsMyProfile;
+    bool isFollowing = ViewBag.IsFollowing != null && (bool)ViewBag.IsFollowing;
+
+    var profileStoriesList = ViewBag.ProfileStoriesList as List<Story> ?? new List<Story>();
+    bool hasProfileStory = profileStoriesList.Any();
+
+    var seenList = ViewBag.SeenStoryIds as List<int> ?? new List<int>();
+    bool isProfileStoriesAllSeen = hasProfileStory && profileStoriesList.All(s => seenList.Contains(s.Id));
+    string profileRingClass = hasProfileStory ? (isProfileStoriesAllSeen ? "seen-story" : "has-story") : "";
+}
+
+<!-- ARAMA MODALI -->
+<div id="searchModalOverlay" class="ig-search-overlay" style="display: none;" onclick="closeSearchModalOnOutside(event)">
+    <div class="ig-search-modal-box" onclick="event.stopPropagation()">
+        <div class="ig-search-modal-header">
+            <h3>Arama Yap</h3>
+            <button type="button" onclick="toggleSearchModal()" class="ig-search-close-btn">✕</button>
+        </div>
+        <div class="ig-search-input-wrapper">
+            <input type="text" id="searchInput" class="ig-modal-search-input" placeholder="Hesap ara..." oninput="searchUsersAjax(this.value)" autocomplete="off" autofocus />
+        </div>
+        <div class="ig-search-modal-results" id="searchResultsContainer">
+            <div class="ig-search-placeholder">Aramak için bir şeyler yazın...</div>
+        </div>
+    </div>
+</div>
+
+<!-- HİKAYE SEÇİM MODALI -->
+<div id="storyCreateModal" class="ig-story-create-modal" style="display: none;" onclick="closeStoryCreateModal(event)">
+    <div class="ig-story-create-box" onclick="event.stopPropagation()">
+        <div class="ig-story-create-header">
+            <h3>Hikaye Ekle</h3>
+            <button type="button" onclick="closeStoryCreateModal()" class="ig-search-close-btn">✕</button>
+        </div>
+        <div class="ig-story-create-options">
+            <button type="button" class="ig-story-option-btn" onclick="document.getElementById('profileStoryInput').click()">
+                <i class="fa-solid fa-photo-film"></i>
+                <span>Fotoğraf / Video Yükle</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- HİKAYE ÖNİZLEME MODALI -->
+<div id="storyPreviewModal" class="ig-story-preview-overlay-fixed" style="display: none;" onclick="closeStoryPreview(event)">
+    <div class="ig-story-preview-box-fixed" onclick="event.stopPropagation()">
+        <div class="ig-story-create-header">
+            <h3>Hikayeyi Önizle</h3>
+            <button type="button" onclick="closeStoryPreview()" class="ig-search-close-btn">✕</button>
+        </div>
+        <div class="ig-story-preview-media" id="storyPreviewMediaContainer"></div>
+        <div class="ig-story-preview-footer">
+            <button type="button" class="ig-story-cancel-btn" onclick="closeStoryPreview()">İptal</button>
+            <button type="button" class="ig-story-share-submit-btn" onclick="document.getElementById('realStoryForm').submit()">Hikayende Paylaş</button>
+        </div>
+    </div>
+</div>
+
+<form asp-action="CreateStory" method="post" enctype="multipart/form-data" id="realStoryForm" style="display:none;">
+    <input type="file" id="hiddenStoryFileInput" name="storyMedia" accept="image/*,video/*" />
+</form>
+
+<div class="ig-layout">
+    <nav class="ig-sidebar">
+        <div class="ig-logo-area"><i class="fa-solid fa-globe ig-logo-icon"></i></div>
+        <ul class="ig-nav-list">
+            <li><a href="/Home/Index" class="ig-nav-item"><i class="fa-solid fa-house"></i> <span class="ig-nav-label">Ana Sayfa</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-compass"></i> <span class="ig-nav-label">Keşfet</span></a></li>
+            <li>
+                <button type="button" class="ig-nav-item" onclick="toggleSearchModal(event)" style="background:none; border:none; width:100%; text-align:left; cursor:pointer; padding: 12px 10px; color: inherit; font: inherit; display:flex; align-items:center; gap:16px;">
+                    <i class="fa-solid fa-magnifying-glass"></i> <span class="ig-nav-label">Ara</span>
+                </button>
+            </li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-clapperboard"></i> <span class="ig-nav-label">Reels</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span></a></li>
+            <li><a href="/Home/Profile/@currentUsername" class="ig-nav-item active"><img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" class="ig-nav-avatar" /> <span class="ig-nav-label">Profil</span></a></li>
+        </ul>
+        <div class="ig-sidebar-bottom">
+            <button type="button" class="ig-bottom-item" onclick="toggleTheme()">
+                <i class="fa-solid fa-moon" id="themeIcon"></i> 
+                <span class="ig-nav-label" id="themeText">Tema: Koyu</span>
+            </button>
+            <button type="button" class="ig-bottom-item" onclick="openLogoutModal()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="ig-nav-label">Çıkış Yap</span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="ig-profile-main">
+        <header class="ig-profile-header">
+            <div class="ig-profile-avatar-outer @profileRingClass" id="ring-profile-main" style="cursor: pointer; position: relative;">
+                <div class="ig-profile-avatar-container" onclick="@(hasProfileStory ? $"openUserStories('{ViewBag.ProfileUsername}')" : (isMyProfile ? "document.getElementById('storyCreateModal').style.display = 'flex'" : ""))">
+                    <img src="@ViewBag.ProfileUserPic" alt="Profil" class="ig-profile-big-avatar" />
+                </div>
+                @if (isMyProfile)
+                {
+                    <div class="ig-profile-story-add-badge" onclick="document.getElementById('storyCreateModal').style.display = 'flex'" title="Hikaye Ekle"><i class="fa-solid fa-plus"></i></div>
+                }
+            </div>
+
+            @if (isMyProfile)
+            {
+                <input type="file" id="profileStoryInput" name="storyMedia" accept="image/*,video/*" style="display:none;" onchange="handleStoryFileSelect(event)" />
+            }
+
+            <div class="ig-profile-info-section">
+                <div class="ig-profile-top-row">
+                    <h2 class="ig-profile-username-title">@ViewBag.ProfileUsername</h2>
+                </div>
+                <div class="ig-profile-stats-row">
+                    <span><strong>@ViewBag.PostCount</strong> gönderi</span>
+                    <span><strong><span id="followerCountDisplay">@ViewBag.FollowersCount</span></strong> takipçi</span>
+                    <span><strong>@ViewBag.FollowingCount</strong> takip edilen</span>
+                </div>
+                <div class="ig-profile-bio-section">
+                    <span class="ig-profile-fullname">@ViewBag.ProfileUsername</span>
+                    <p class="ig-profile-biotext">@ViewBag.ProfileUserBio</p>
+                </div>
+                <div class="ig-profile-actions-row">
+                    @if (isMyProfile)
+                    {
+                        <a href="#" class="ig-edit-profile-btn">Profili düzenle</a>
+                        <a href="#" class="ig-edit-profile-btn">Arşivi gör</a>
+                    }
+                    else
+                    {
+                        <button type="button" id="followBtn" class="ig-follow-main-btn @(isFollowing ? "following" : "")" onclick="toggleFollow('@ViewBag.ProfileUsername')">@(isFollowing ? "Takipten Çık" : "Takip Et")</button>
+                        <button type="button" class="ig-message-btn-wide">Mesaj Gönder</button>
+                    }
+                </div>
+            </div>
+        </header>
+
+        <!-- INSTAGRAM TARZI 3'LÜ SEKME ÇUBUĞU -->
+        <div class="ig-profile-tabs-bar">
+            <div class="ig-profile-tab-item active">
+                <i class="fa-solid fa-table-cells"></i> <span>GÖNDERİLER</span>
+            </div>
+            <div class="ig-profile-tab-item">
+                <i class="fa-regular fa-bookmark"></i> <span>KAYDEDİLENLER</span>
+            </div>
+            <div class="ig-profile-tab-item">
+                <i class="fa-regular fa-id-badge"></i> <span>ETİKETLENENLER</span>
+            </div>
+        </div>
+
+        <div class="ig-user-posts-grid">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="ig-no-posts-box">
+                    <div class="ig-empty-camera-icon"><i class="fa-solid fa-camera"></i></div>
+                    <h3>Gönderi Yok</h3>
+                    <p>Henüz bir gönderi paylaşılmadı.</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var post in Model)
+                {
+                    <div class="ig-grid-post-card">
+                        @if (!string.IsNullOrEmpty(post.MediaUrl))
+                        {
+                            <div class="ig-grid-media">
+                                @if (post.MediaType == "video")
+                                {
+                                    <video src="@post.MediaUrl"></video>
+                                }
+                                else
+                                {
+                                    <img src="@post.MediaUrl" alt="Post" />
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="ig-grid-text-only"><p>@post.Content</p></div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </main>
+</div>
+
+<!-- HİKAYE OYNATICISI -->
+<div id="storyViewerModal" class="ig-story-viewer-modal" onclick="closeStoryViewer()">
+    <div class="ig-story-backdrop-blur"></div>
+    <div class="ig-story-top-bar" onclick="event.stopPropagation()">
+        <div class="ig-story-progress-container" id="storyProgressContainer"></div>
+        <div class="ig-story-header-info">
+            <img id="viewerOwnerPic" src="" class="ig-viewer-avatar" />
+            <span id="viewerOwnerName" class="ig-viewer-username"></span>
+            <span id="viewerTimeAgo" class="ig-viewer-time"></span>
+        </div>
+        <div class="ig-story-header-right">
+            <div class="ig-story-menu-wrapper">
+                <button type="button" class="ig-story-dots-btn" onclick="toggleStoryMenu(event)"><span></span><span></span><span></span></button>
+                <div id="storyDropdownMenu" class="ig-story-dropdown" style="display:none;">
+                    <a id="deleteStoryLink" href="#" class="ig-story-delete-item">Hikayeyi Sil</a>
+                </div>
+            </div>
+            <button type="button" class="ig-story-close-global" onclick="closeStoryViewer()">✕</button>
+        </div>
+    </div>
+    <div class="ig-story-viewer-container" onclick="event.stopPropagation()">
+        <div class="ig-main-story-card">
+            <div class="ig-story-media-box" id="viewerMediaContainer"
+                 onmousedown="startStoryHold(event)" onmouseup="endStoryHold(event)" onmouseleave="endStoryHold(event)"
+                 onttouchstart="startStoryHold(event)" ontouchend="endStoryHold(event)" onclick="handleStoryCardClick(event)">
+            </div>
+            <div class="ig-story-footer-actions">
+                <input type="text" id="storyCommentInput" placeholder="Yanıt gönder..." autocomplete="off" onkeypress="handleStoryComment(event)" />
+                <button type="button" class="ig-story-like-btn" onclick="likeActiveStory()"><i class="fa-regular fa-heart" id="storyHeartIcon"></i></button>
+                <button type="button" class="ig-story-send-btn" onclick="sendStoryComment()"><i class="fa-regular fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ÇIKIŞ ONAY MODALI -->
+<div id="logoutModal" class="ig-logout-modal-overlay" style="display: none;" onclick="closeLogoutModalOnOutside(event)">
+    <div class="ig-logout-modal-box">
+        <div class="ig-logout-modal-header">
+            <h3>Çıkış Yap</h3>
+            <p>Hesabınızdan çıkış yapmak istediğinize emin misiniz?</p>
+        </div>
+        <div class="ig-logout-modal-actions">
+            <a href="/Account/Logout" class="ig-logout-confirm-btn">Çıkış Yap</a>
+            <button type="button" class="ig-logout-cancel-btn" onclick="closeLogoutModal()">İptal</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --ig-bg: #000;
+        --ig-card-bg: #000;
+        --ig-text: #fff;
+        --ig-text-muted: #737373;
+        --ig-border: #262626;
+        --ig-input-bg: #121212;
+        --ig-hover: rgba(255, 255, 255, 0.05);
+        --ig-primary: #0095f6;
+    }
+
+    body {
+        background-color: var(--ig-bg);
+        color: var(--ig-text);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    .ig-layout {
+        display: flex;
+        max-width: 1200px;
+        margin: 0 auto;
+        min-height: 100vh;
+        justify-content: center;
+        position: relative;
+    }
+
+    .ig-search-overlay, .ig-story-create-modal, .ig-logout-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 999999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(4px);
+    }
+
+    /* HİKAYE ÖNİZLEME MODALI SABİT VE SORUNSUZ */
+    .ig-story-preview-overlay-fixed {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.85) !important;
+        backdrop-filter: blur(5px);
+        z-index: 999999999 !important;
+        display: none;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .ig-story-preview-box-fixed {
+        width: 380px !important;
+        max-width: 90vw !important;
+        background: #262626 !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.9) !important;
+        border: 1px solid #363636 !important;
+    }
+
+    .ig-story-preview-media {
+        padding: 15px;
+        text-align: center;
+        background: #121212;
+        max-height: 350px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .ig-story-preview-media img, .ig-story-preview-media video {
+            max-width: 100%;
+            max-height: 320px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+    .ig-story-preview-footer {
+        padding: 14px 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #262626;
+        border-top: 1px solid #363636;
+    }
+
+    .ig-story-cancel-btn {
+        background: none;
+        border: none;
+        color: var(--ig-text);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 8px 14px;
+    }
+
+    .ig-story-share-submit-btn {
+        background: var(--ig-primary);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    /* HİKAYE OYNATICISI KESİN ORTALAMA VE BOYUTLANDIRMA */
+    .ig-story-viewer-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0, 0, 0, 0.9) !important;
+        z-index: 99999999 !important;
+        display: none;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .ig-story-viewer-container {
+        position: relative !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        height: 85vh !important;
+        max-height: 750px !important;
+        margin: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 5 !important;
+    }
+
+    .ig-main-story-card {
+        width: 100% !important;
+        height: 100% !important;
+        background: #000 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        position: relative !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.9) !important;
+    }
+
+    .ig-story-media-box {
+        flex: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #111 !important;
+        overflow: hidden !important;
+        cursor: default !important;
+    }
+
+        .ig-story-media-box img, .ig-story-media-box video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
+            cursor: default !important;
+        }
+
+    .ig-search-modal-box {
+        width: 480px;
+        max-width: 90vw;
+        height: 550px;
+        background: #121212;
+        border: 1px solid var(--ig-border);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .ig-search-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--ig-border);
+        padding-bottom: 14px;
+        margin-bottom: 16px;
+    }
+
+        .ig-search-modal-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+    .ig-search-close-btn {
+        background: none;
+        border: none;
+        color: var(--ig-text-muted);
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    .ig-modal-search-input {
+        width: 100%;
+        background: #262626;
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--ig-text);
+        outline: none;
+        box-sizing: border-box;
+    }
+
+    .ig-search-modal-results {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ig-search-placeholder {
+        color: var(--ig-text-muted);
+        text-align: center;
+        margin-top: 60px;
+        font-size: 14px;
+    }
+
+    .ig-search-result-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+    }
+
+        .ig-search-result-item:hover {
+            background: var(--ig-hover);
+        }
+
+    .ig-search-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .ig-search-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .ig-search-username {
+        font-weight: 600;
+        font-size: 14px;
+        display: block;
+    }
+
+    .ig-search-bio {
+        font-size: 12px;
+        color: var(--ig-text-muted);
+    }
+
+    .ig-story-create-box {
+        width: 360px;
+        background: #262626;
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ig-story-create-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #363636;
+    }
+
+        .ig-story-create-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            color: #fff;
+        }
+
+    .ig-story-create-options {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .ig-story-option-btn {
+        background: #121212;
+        border: 1px solid #363636;
+        color: white;
+        padding: 14px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .ig-story-option-btn i {
+            font-size: 18px;
+            color: var(--ig-primary);
+        }
+
+    .ig-sidebar {
+        width: 72px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        border-right: 1px solid var(--ig-border);
+        padding: 24px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: var(--ig-card-bg);
+        z-index: 1000;
+        box-sizing: border-box;
+        transition: width 0.25s ease;
+        overflow: hidden;
+    }
+
+        .ig-sidebar:hover {
+            width: 244px;
+        }
+
+    .ig-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 4px 28px 8px;
+    }
+
+    .ig-logo-icon {
+        font-size: 26px;
+        color: var(--ig-primary);
+        min-width: 24px;
+        text-align: center;
+    }
+
+    .ig-nav-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ig-nav-item, .ig-bottom-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 10px;
+        text-decoration: none;
+        color: var(--ig-text);
+        border-radius: 8px;
+        font-size: 15px;
+        white-space: nowrap;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+        .ig-nav-item i, .ig-bottom-item i {
+            font-size: 20px !important;
+            width: 24px;
+            text-align: center;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .ig-nav-item:hover, .ig-nav-item.active {
+            background-color: var(--ig-hover);
+            font-weight: 600;
+        }
+
+    .ig-nav-avatar {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        min-width: 24px !important;
+    }
+
+    .ig-nav-label {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .ig-sidebar:hover .ig-nav-label {
+        opacity: 1;
+    }
+
+    .ig-sidebar-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .ig-bottom-item {
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+
+        .ig-bottom-item:hover {
+            background-color: var(--ig-hover);
+        }
+
+    .ig-profile-main {
+        flex: 1;
+        margin-left: 72px;
+        padding: 30px 40px;
+        max-width: 935px;
+        box-sizing: border-box;
+    }
+
+    .ig-profile-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 50px;
+        padding-bottom: 20px;
+    }
+
+    .ig-profile-avatar-outer {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+        .ig-profile-avatar-outer.has-story {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            padding: 3px;
+        }
+
+        .ig-profile-avatar-outer.seen-story {
+            background: #dbdbdb !important;
+            padding: 3px;
+        }
+
+    .ig-profile-avatar-container {
+        width: 142px;
+        height: 142px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: var(--ig-card-bg);
+        border: 3px solid var(--ig-card-bg);
+        cursor: pointer;
+    }
+
+    .ig-profile-big-avatar {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .ig-profile-story-add-badge {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: #0095f6 !important;
+        color: white !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        border: none !important;
+        outline: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        z-index: 10 !important;
+        cursor: pointer !important;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .ig-profile-info-section {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex: 1;
+    }
+
+    .ig-profile-top-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .ig-profile-username-title {
+        font-size: 20px;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    .ig-profile-actions-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .ig-edit-profile-btn, .ig-message-btn-wide {
+        background: var(--ig-border) !important;
+        color: var(--ig-text) !important;
+        padding: 7px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+
+        .ig-edit-profile-btn:hover, .ig-message-btn-wide:hover {
+            opacity: 0.8;
+        }
+
+    .ig-follow-main-btn {
+        background: var(--ig-primary);
+        color: #fff;
+        border: none;
+        padding: 7px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+        .ig-follow-main-btn.following {
+            background: var(--ig-border);
+            color: var(--ig-text);
+        }
+
+    .ig-profile-stats-row {
+        display: flex;
+        gap: 40px;
+        font-size: 16px;
+        margin-top: 4px;
+    }
+
+    .ig-profile-bio-section {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+
+    .ig-profile-fullname {
+        font-weight: 600;
+    }
+
+    .ig-profile-biotext {
+        color: var(--ig-text);
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .ig-profile-tabs-bar {
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        border-top: 1px solid var(--ig-border);
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .ig-profile-tab-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        color: var(--ig-text-muted);
+        padding: 14px 0;
+        cursor: pointer;
+        border-top: 1px solid transparent;
+        margin-top: -1px;
+    }
+
+        .ig-profile-tab-item.active {
+            color: var(--ig-text);
+            border-top: 1px solid var(--ig-text);
+        }
+
+    .ig-user-posts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 28px;
+        margin-top: 10px;
+    }
+
+    .ig-grid-post-card {
+        aspect-ratio: 1/1;
+        background: var(--ig-input-bg);
+        border-radius: 4px;
+        overflow: hidden;
+        border: 1px solid var(--ig-border);
+        position: relative;
+    }
+
+    .ig-grid-media {
+        width: 100%;
+        height: 100%;
+    }
+
+        .ig-grid-media img, .ig-grid-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .ig-grid-text-only {
+        padding: 16px;
+        font-size: 13px;
+        color: var(--ig-text);
+        height: 100%;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .ig-no-posts-box {
+        grid-column: span 3;
+        text-align: center;
+        padding: 80px 0;
+        color: var(--ig-text-muted);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ig-empty-camera-icon {
+        width: 62px;
+        height: 62px;
+        border: 2px solid var(--ig-text);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--ig-text);
+        margin-bottom: 6px;
+    }
+
+    .ig-no-posts-box h3 {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .ig-no-posts-box p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* ÇIKIŞ ONAY MODALI STİLLERİ */
+    .ig-logout-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 9999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ig-logout-modal-box {
+        width: 320px;
+        background: var(--ig-card-bg);
+        border-radius: 14px;
+        text-align: center;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        border: 1px solid var(--ig-border);
+    }
+
+    .ig-logout-modal-header {
+        padding: 24px 20px;
+        border-bottom: 1px solid var(--ig-border);
+    }
+
+        .ig-logout-modal-header h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ig-text);
+        }
+
+        .ig-logout-modal-header p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--ig-text-muted);
+        }
+
+    .ig-logout-modal-actions {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ig-logout-confirm-btn {
+        padding: 14px;
+        background: none;
+        border: none;
+        border-bottom: 1px solid var(--ig-border);
+        color: #ed4956;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+        .ig-logout-confirm-btn:hover {
+            background: rgba(237, 73, 86, 0.1);
+        }
+
+    .ig-logout-cancel-btn {
+        padding: 14px;
+        background: none;
+        border: none;
+        color: var(--ig-text);
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+        .ig-logout-cancel-btn:hover {
+            background: var(--ig-hover);
+        }
+
+    /* AÇIK / KOYU TEMA DESTEĞİ */
+    body.light-theme {
+        --ig-bg: #fafafa;
+        --ig-card-bg: #fff;
+        --ig-text: #262626;
+        --ig-text-muted: #737373;
+        --ig-border: #dbdbdb;
+        --ig-input-bg: #efefef;
+        --ig-hover: rgba(0, 0, 0, 0.05);
+    }
+
+    /* HİKAYE OYNATICISI ÜST BİLGİ VE KONTROLLER */
+    .ig-story-backdrop-blur {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        z-index: 1;
+    }
+
+    .ig-story-top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 20;
+        box-sizing: border-box;
+    }
+
+    .ig-story-progress-container {
+        display: flex;
+        gap: 4px;
+        width: 100%;
+    }
+
+    .ig-story-progress-segment {
+        flex: 1;
+        height: 2px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .ig-story-progress-fill {
+        width: 0%;
+        height: 100%;
+        background: #fff;
+    }
+
+    .ig-story-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .ig-viewer-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .ig-viewer-username {
+        color: white;
+        font-weight: 600;
+    }
+
+    .ig-viewer-time {
+        color: rgba(255,255,255,0.6);
+        font-size: 12px;
+    }
+
+    .ig-story-header-right {
+        position: absolute !important;
+        top: 20px !important;
+        right: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 15px !important;
+        z-index: 25 !important;
+    }
+
+    .ig-story-close-global {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .ig-story-dots-btn {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        gap: 3px;
+        padding: 5px;
+    }
+
+        .ig-story-dots-btn span {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+        }
+
+    .ig-story-menu-wrapper {
+        position: relative;
+    }
+
+    .ig-story-dropdown {
+        position: absolute;
+        right: 0;
+        top: 30px;
+        background: #262626;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        min-width: 120px;
+        z-index: 30;
+    }
+
+    .ig-story-delete-item {
+        display: block;
+        width: 100%;
+        padding: 10px 14px;
+        color: #ed4956;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        text-align: left;
+    }
+
+        .ig-story-delete-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+    .ig-story-footer-actions {
+        position: absolute;
+        bottom: 15px;
+        left: 15px;
+        right: 15px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 10;
+    }
+
+        .ig-story-footer-actions input {
+            flex: 1;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: white;
+            outline: none;
+            font-size: 13px;
+        }
+
+            .ig-story-footer-actions input::placeholder {
+                color: rgba(255,255,255,0.6);
+            }
+
+    .ig-story-like-btn, .ig-story-send-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+        .ig-story-like-btn i.liked {
+            color: #ed4956;
+        }
+
+    /* KESİN VE EKSİKSİZ PROFİL SAYFASI MOBİL UYUMLULUK (RESPONSIVE) TASARIMI */
+    @@media screen and (max-width: 768px) {
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            min-height: 100% !important;
+            height: 100% !important;
+            overflow-x: hidden !important;
+            background-color: var(--ig-bg, #000) !important;
+            padding-bottom: 60px !important;
+        }
+
+        .ig-layout {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Profil ana alanının yüksekliğini içeriğe sabitliyoruz, alttaki gereksiz siyah boşluk kalmıyor */
+        .ig-profile-main {
+            margin-left: 0 !important;
+            padding: 16px 12px 20px 12px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: calc(100vh - 60px) !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+            background-color: var(--ig-bg, #000) !important;
+        }
+
+        /* Profil Header'ını mobilde dikey ve Instagram tarzı yap */
+        .ig-profile-header {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 12px !important;
+            text-align: center !important;
+            padding-bottom: 16px !important;
+            width: 100% !important;
+        }
+
+        .ig-profile-avatar-outer {
+            width: 86px !important;
+            height: 86px !important;
+        }
+
+        .ig-profile-avatar-container {
+            width: 80px !important;
+            height: 80px !important;
+        }
+
+        .ig-profile-story-add-badge {
+            width: 22px !important;
+            height: 22px !important;
+            font-size: 10px !important;
+            bottom: 0px !important;
+            right: 0px !important;
+        }
+
+        .ig-profile-info-section {
+            width: 100% !important;
+            align-items: center !important;
+            gap: 10px !important;
+        }
+
+        .ig-profile-top-row {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 4px !important;
+            width: 100% !important;
+        }
+
+        .ig-profile-username-title {
+            font-size: 18px !important;
+            font-weight: 600 !important;
+        }
+
+        /* Butonlar alt alta değil, tam istediğin gibi isim/bio altında yan yana duracak */
+        .ig-profile-actions-row {
+            flex-direction: row !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: 4px !important;
+        }
+
+        .ig-edit-profile-btn, .ig-message-btn-wide, .ig-follow-main-btn {
+            flex: 1 !important;
+            max-width: 160px !important;
+            text-align: center !important;
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            box-sizing: border-box !important;
+        }
+
+        .ig-profile-stats-row {
+            gap: 28px !important;
+            font-size: 14px !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }
+
+        .ig-profile-bio-section {
+            align-items: center !important;
+            text-align: center !important;
+            font-size: 13px !important;
+            width: 100% !important;
+        }
+
+        /* Sekme çubuğunu ortala */
+        .ig-profile-tabs-bar {
+            gap: 40px !important;
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+        }
+
+        .ig-profile-tab-item span {
+            display: none !important; /* Mobilde sadece ikonlar kalsın */
+        }
+
+        .ig-profile-tab-item {
+            font-size: 18px !important;
+            padding: 10px 0 !important;
+        }
+
+        /* Gönderi grid yapısını mobilde tam oturt ve arkadaki siyahlığı kes */
+        .ig-user-posts-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 3px !important;
+            width: 100% !important;
+            margin-bottom: 0 !important;
+            background-color: var(--ig-bg, #000) !important;
+        }
+
+        .ig-grid-post-card {
+            border-radius: 0 !important;
+            border: none !important;
+        }
+
+        /* Sol menüyü ekranın en altına sabit çubuk yap */
+        .ig-sidebar {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;
+            width: 100vw !important;
+            height: 60px !important;
+            max-height: 60px !important;
+            flex-direction: row !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            background: var(--ig-card-bg, #000) !important;
+            border-top: 1px solid var(--ig-border, #262626) !important;
+            border-right: none !important;
+            z-index: 999999 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+            .ig-sidebar:hover {
+                width: 100vw !important;
+            }
+
+            .ig-sidebar span, 
+            .ig-logo-area, 
+            .ig-sidebar-bottom, 
+            .ig-nav-label {
+                display: none !important;
+            }
+
+        .ig-nav-list {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+
+        .ig-nav-item {
+            padding: 8px !important;
+            gap: 0 !important;
+            justify-content: center !important;
+        }
+    }
+</style>
+
+<script>
+    function toggleSearchModal(event) {
+        if (event) event.preventDefault();
+        const modal = document.getElementById('searchModalOverlay');
+        if (!modal) return;
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        if (modal.style.display === 'flex') document.getElementById('searchInput').focus();
+    }
+    function closeSearchModalOnOutside(event) {
+        const modal = document.getElementById('searchModalOverlay');
+        if (event.target === modal) modal.style.display = 'none';
+    }
+    function closeStoryCreateModal(e) {
+        if (!e || e.target.id === 'storyCreateModal' || e.target.classList.contains('ig-search-close-btn')) {
+            document.getElementById('storyCreateModal').style.display = 'none';
+        }
+    }
+    function searchUsersAjax(query) {
+        const container = document.getElementById('searchResultsContainer');
+        if (!query || query.trim() === "") { container.innerHTML = '<div class="ig-search-placeholder">Aramak için bir şeyler yazın...</div>'; return; }
+        fetch('/Home/SearchUsers?q=' + encodeURIComponent(query)).then(res => res.json()).then(users => {
+            if (users.length === 0) { container.innerHTML = '<div class="ig-search-placeholder">Sonuç bulunamadı.</div>'; return; }
+            let html = '';
+            users.forEach(u => {
+                html += `<a href="/Home/Profile?username=${encodeURIComponent(u.username)}" class="ig-search-result-item"><div class="ig-search-user-info"><img src="${u.profilePicture}" class="ig-search-avatar" /><div><span class="ig-search-username">${u.username}</span><span class="ig-search-bio">${u.bio}</span></div></div></a>`;
+            });
+            container.innerHTML = html;
+        });
+    }
+    function toggleFollow(targetUsername) {
+        fetch('/Home/ToggleFollow?targetUsername=' + encodeURIComponent(targetUsername), { method: 'POST', headers: { 'Content-Type': 'application/json' } }).then(res => res.json()).then(data => {
+            if (data.success) {
+                const btn = document.getElementById('followBtn');
+                const countSpan = document.getElementById('followerCountDisplay');
+                btn.textContent = data.isFollowing ? "Takipten Çık" : "Takip Et";
+                if (data.isFollowing) btn.classList.add('following'); else btn.classList.remove('following');
+                countSpan.textContent = data.followerCount;
+            }
+        });
+    }
+
+    let currentStories = [];
+    let currentStoryIndex = 0;
+    let storyTimer = null;
+    let progressInterval = null;
+    let isPaused = false;
+    const sessionUser = "@currentUsername";
+
+    function openUserStories(username) {
+        fetch('/Home/GetUserStories?username=' + encodeURIComponent(username)).then(res => res.json()).then(stories => {
+            if (stories && stories.length > 0) {
+                currentStories = stories;
+                const firstUnseenIdx = stories.findIndex(s => {
+                    const seen = s.IsSeenByMe !== undefined ? s.IsSeenByMe : s.isSeenByMe;
+                    return !seen;
+                });
+                currentStoryIndex = firstUnseenIdx !== -1 ? firstUnseenIdx : 0;
+                document.getElementById('storyViewerModal').style.display = 'flex';
+                buildProgressSegments();
+                loadStoryByIndex(currentStoryIndex);
+            }
+        });
+    }
+
+    function buildProgressSegments() {
+        const container = document.getElementById('storyProgressContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        currentStories.forEach((s, idx) => {
+            const seg = document.createElement('div');
+            seg.className = 'ig-story-progress-segment';
+            seg.innerHTML = `<div class="ig-story-progress-fill" id="seg-fill-${idx}"></div>`;
+            container.appendChild(seg);
+        });
+    }
+
+    function loadStoryByIndex(index) {
+        if (index < 0 || index >= currentStories.length) { closeStoryViewer(); return; }
+        currentStoryIndex = index;
+        const story = currentStories[index];
+
+        const storyId = story.Id || story.id;
+        const storyUsername = story.Username || story.username;
+        const storyMediaUrl = story.MediaUrl || story.mediaUrl;
+        const storyMediaType = story.MediaType || story.mediaType;
+        const userPic = story.UserProfilePic || story.userProfilePic || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        const storyDate = story.Date || story.date;
+        const isLiked = story.IsLikedByMe !== undefined ? story.IsLikedByMe : (story.isLikedByMe !== undefined ? story.isLikedByMe : false);
+
+        if (storyId) {
+            fetch('/Home/InteractStory?storyId=' + storyId + '&type=seen', { method: 'POST' })
+                .catch(err => console.error("Görüldü kaydedilemedi:", err));
+        }
+
+        document.getElementById('viewerOwnerName').textContent = storyUsername;
+        document.getElementById('viewerOwnerPic').src = userPic;
+
+        const diffMin = Math.floor((new Date() - new Date(storyDate)) / 60000);
+        let timeStr = diffMin < 1 ? "Az önce" : diffMin < 60 ? `${diffMin}d` : Math.floor(diffMin / 60) < 24 ? `${Math.floor(diffMin / 60)}s` : `${Math.floor(diffMin / 1440)}g`;
+        document.getElementById('viewerTimeAgo').textContent = timeStr;
+
+        const heartIcon = document.getElementById('storyHeartIcon');
+        if (heartIcon) {
+            heartIcon.className = isLiked ? "fa-solid fa-heart liked" : "fa-regular fa-heart";
+        }
+
+        const deleteLink = document.getElementById('deleteStoryLink');
+        if (deleteLink) {
+            if (storyUsername.toLowerCase() === sessionUser.toLowerCase()) {
+                deleteLink.style.display = 'block';
+                deleteLink.setAttribute('data-story-id', storyId);
+            } else { deleteLink.style.display = 'none'; }
+        }
+
+        const container = document.getElementById('viewerMediaContainer');
+        if (container) {
+            container.innerHTML = '';
+            if (storyMediaUrl && (storyMediaUrl.endsWith('.mp4') || storyMediaType === 'video')) {
+                const video = document.createElement('video');
+                video.src = storyMediaUrl; video.autoplay = true; video.muted = false; video.controls = false;
+                container.appendChild(video);
+            } else if (storyMediaUrl) {
+                const img = document.createElement('img');
+                img.src = storyMediaUrl;
+                container.appendChild(img);
+            }
+        }
+
+        currentStories.forEach((_, i) => {
+            const fill = document.getElementById(`seg-fill-${i}`);
+            if (fill) {
+                if (i < index) fill.style.width = '100%';
+                else if (i > index) fill.style.width = '0%';
+            }
+        });
+
+        startStoryTimer();
+    }
+
+    function startStoryTimer() {
+        clearTimeout(storyTimer);
+        clearInterval(progressInterval);
+        const currentFill = document.getElementById(`seg-fill-${currentStoryIndex}`);
+        if (!currentFill) return;
+
+        let width = 0;
+        currentFill.style.width = '0%';
+        progressInterval = setInterval(() => {
+            if (!isPaused) {
+                width += 1;
+                currentFill.style.width = width + '%';
+                if (width >= 100) clearInterval(progressInterval);
+            }
+        }, 50);
+        storyTimer = setTimeout(() => { loadStoryByIndex(currentStoryIndex + 1); }, 5000);
+    }
+
+    function startStoryHold(e) { isPaused = true; }
+    function endStoryHold(e) { isPaused = false; }
+
+    function closeStoryViewer() {
+        clearTimeout(storyTimer);
+        clearInterval(progressInterval);
+        isPaused = false;
+        document.getElementById('storyViewerModal').style.display = 'none';
+        const container = document.getElementById('viewerMediaContainer');
+        if (container) container.innerHTML = '';
+        location.reload();
+    }
+
+    function toggleStoryMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('storyDropdownMenu');
+        if (menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    window.addEventListener('click', () => {
+        const menu = document.getElementById('storyDropdownMenu');
+        if (menu) menu.style.display = 'none';
+    });
+
+    function handleStoryCardClick(e) {
+        const mediaBox = document.getElementById('viewerMediaContainer');
+        if (mediaBox) {
+            const rect = mediaBox.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            if (clickX < rect.width / 2) {
+                if (currentStoryIndex > 0) loadStoryByIndex(currentStoryIndex - 1);
+            } else {
+                if (currentStoryIndex + 1 < currentStories.length) loadStoryByIndex(currentStoryIndex + 1);
+                else closeStoryViewer();
+            }
+        }
+    }
+
+    function likeActiveStory() {
+        const story = currentStories[currentStoryIndex];
+        if (!story) return;
+        const storyId = story.Id || story.id;
+        if (!storyId) return;
+
+        fetch('/Home/InteractStory?storyId=' + storyId + '&type=like', { method: 'POST' }).then(res => res.json()).then(data => {
+            if (data.success) {
+                const icon = document.getElementById('storyHeartIcon');
+                if (icon) {
+                    if (data.isLiked) {
+                        icon.className = "fa-solid fa-heart liked";
+                        story.IsLikedByMe = true; story.isLikedByMe = true;
+                    } else {
+                        icon.className = "fa-regular fa-heart";
+                        story.IsLikedByMe = false; story.isLikedByMe = false;
+                    }
+                }
+            }
+        });
+    }
+
+    function sendStoryComment() {
+        const story = currentStories[currentStoryIndex];
+        const input = document.getElementById('storyCommentInput');
+        if (!input || !story) return;
+        const storyId = story.Id || story.id;
+        const text = input.value.trim();
+        if (!text || !storyId) return;
+
+        fetch('/Home/InteractStory?storyId=' + storyId + '&type=comment&commentText=' + encodeURIComponent(text), { method: 'POST' }).then(res => res.json()).then(data => {
+            if (data.success) {
+                input.value = "";
+                alert("Yorumunuz gönderildi!");
+            }
+        });
+    }
+
+    function handleStoryComment(e) { if (e.key === 'Enter') { e.preventDefault(); sendStoryComment(); } }
+
+    function handleStoryFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const hiddenInput = document.getElementById('hiddenStoryFileInput');
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        hiddenInput.files = dataTransfer.files;
+
+        const container = document.getElementById('storyPreviewMediaContainer');
+        container.innerHTML = '';
+        const fileURL = URL.createObjectURL(file);
+        if (file.type.startsWith('video')) {
+            const video = document.createElement('video');
+            video.src = fileURL; video.controls = true; video.autoplay = true; video.muted = true;
+            container.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = fileURL;
+            container.appendChild(img);
+        }
+
+        document.getElementById('storyCreateModal').style.display = 'none';
+        document.getElementById('storyPreviewModal').style.display = 'flex';
+    }
+
+    function closeStoryPreview(e) {
+        if (!e || e.target.id === 'storyPreviewModal' || e.target.classList.contains('ig-story-cancel-btn') || e.target.classList.contains('ig-search-close-btn')) {
+            document.getElementById('storyPreviewModal').style.display = 'none';
+            document.getElementById('hiddenStoryFileInput').value = '';
+        }
+    }
+
+    const deleteStoryLink = document.getElementById('deleteStoryLink');
+    if (deleteStoryLink) {
+        deleteStoryLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const storyId = this.getAttribute('data-story-id');
+            if (!storyId) return;
+            fetch('/Home/DeleteStory/' + storyId, { method: 'POST' }).then(() => {
+                closeStoryViewer();
+                location.reload();
+            });
+        });
+    }
+
+    function openLogoutModal() { document.getElementById('logoutModal').style.display = 'flex'; }
+    function closeLogoutModal() { document.getElementById('logoutModal').style.display = 'none'; }
+    function closeLogoutModalOnOutside(event) {
+        const modal = document.getElementById('logoutModal');
+        if (event.target === modal) modal.style.display = 'none';
+    }
+
+    function toggleTheme() {
+        const body = document.body;
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+
+        body.classList.toggle('light-theme');
+
+        if (body.classList.contains('light-theme')) {
+            localStorage.setItem('ig_theme', 'light');
+            themeIcon.className = "fa-solid fa-sun";
+            themeText.textContent = "Tema: Açık";
+        } else {
+            localStorage.setItem('ig_theme', 'dark');
+            themeIcon.className = "fa-solid fa-moon";
+            themeText.textContent = "Tema: Koyu";
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('ig_theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeText = document.getElementById('themeText');
+            if (themeIcon) themeIcon.className = "fa-solid fa-sun";
+            if (themeText) themeText.textContent = "Tema: Açık";
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

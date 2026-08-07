@@ -1,0 +1,104 @@
+﻿<!-- TEMA DEĞİŞTİRME BUTONU -->
+<button id="themeToggleBtn" class="theme-toggle-btn" type="button">
+    <span class="theme-icon">🌙</span>
+    <span class="theme-text">Koyu Tema</span>
+</button>
+
+<!-- ANA KART: enctype eklendi, içindeki mükerrer form silindi -->
+<form asp-action="Detaing" method="post" enctype="multipart/form-data" class="form-container onboarding-container">
+
+    <!-- BAŞLIK ALANI -->
+    <div class="header-container text-center">
+        <h2 class="welcome-title">Profilini Tamamla</h2>
+    </div>
+    <p class="subtitle text-center">Sana özel bir deneyim sunabilmemiz için birkaç detay ekle.</p>
+
+    <!-- PROFİL FOTOĞRAFI -->
+    <div class="profile-upload-wrapper">
+        <div class="profile-avatar-container">
+            <img id="profilePreview" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Profil Fotoğrafı" />
+
+            <label for="profileInput" class="avatar-edit-btn" title="Fotoğraf Seç/Değiştir">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z" />
+                    <path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
+                </svg>
+            </label>
+            <!-- Dosya inputu burada formun içinde düzgün duruyor -->
+            <input type="file" id="profileInput" name="profileInput" accept="image/*" style="display: none;" />
+        </div>
+
+        <button type="button" id="removePhotoBtn" class="btn-remove-photo">
+            <svg viewBox="0 0 24 24">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+            </svg>
+            Fotoğrafı Kaldır
+        </button>
+    </div>
+
+    <!-- BİYOGRAFİ -->
+    <div class="bio-wrapper">
+        <label for="userBio" class="lbl mb-2">Kendinden Kısaca Bahset</label>
+        <textarea class="form-control fm bio-textarea" id="userBio" name="detail" placeholder="Örn: Yazılımla ilgileniyorum, müzik dinlemeyi severim..." maxlength="150" spellcheck="false"></textarea>
+        <small class="char-count"><span id="currentCharCount">0</span>/150</small>
+    </div>
+
+    <!-- İLGİ ALANLARI -->
+    <h5 class="lbl mb-3">İlgi Alanlarını Seç</h5>
+    <div class="interests-grid">
+
+        <div class="interest-card" data-id="1" onclick="toggleInterest(this)">
+            <div class="interest-circle">
+                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80" alt="Müzik">
+                <div class="overlay">
+                    <div class="checkmark-bg">
+                        <svg class="checkmark-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+            <span class="interest-title">Müzik</span>
+        </div>
+
+        <div class="interest-card" data-id="2" onclick="toggleInterest(this)">
+            <div class="interest-circle">
+                <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=200&q=80" alt="Gündem">
+                <div class="overlay">
+                    <div class="checkmark-bg">
+                        <svg class="checkmark-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+            <span class="interest-title">Gündem</span>
+        </div>
+
+        <div class="interest-card" data-id="3" onclick="toggleInterest(this)">
+            <div class="interest-circle">
+                <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=200&q=80" alt="Yazılım">
+                <div class="overlay">
+                    <div class="checkmark-bg">
+                        <svg class="checkmark-svg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+            <span class="interest-title">Yazılım</span>
+        </div>
+
+    </div>
+
+    <!-- BUTON VE ŞİMDİLİK ATLA LİNKİ -->
+    <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary registerButton" id="confirmButton">Bilgileri Kaydet</button>
+    </div>
+
+    <div class="bottom-link">
+        <a href="/Home/Index" class="skip-link">
+            <span>Şimdilik Atla</span>
+            <span class="skip-arrow">➔</span>
+        </a>
+    </div>
+
+</form>
+
+<!-- ÖZEL DOSYA BAĞLANTILARI -->
+<link rel="stylesheet" href="~/css/Detaing.css" />
+<script src="~/js/Detaing.js"></script>
