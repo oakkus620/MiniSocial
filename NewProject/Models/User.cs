@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace YourProject.Models
 {
@@ -8,7 +10,7 @@ namespace YourProject.Models
         public int Id { get; set; }
 
         [Required]
-        public string AdSoyad { get; set; }=string.Empty;
+        public string AdSoyad { get; set; } = string.Empty;
 
         [Required]
         public string Username { get; set; } = string.Empty;
@@ -27,8 +29,11 @@ namespace YourProject.Models
         public bool IsEmailConfirmed { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // YENİ EKLENEN PROFİL ALANLARI:
-        public string? Bio { get; set; }           // Biyografi yazısı
-        public string? ProfilePicturePath { get; set; } // Fotoğrafın sunucudaki dosya yolu (örn: /uploads/profil.jpg)
+        // Profil Alanları:
+        public string? Bio { get; set; }
+        public string? ProfilePicturePath { get; set; }
+
+        // GİZLİ HESAP ÖZELLİĞİ:
+        public bool IsPrivate { get; set; } = false; // Varsayılan olarak hesap açık (public) başlar
     }
 }

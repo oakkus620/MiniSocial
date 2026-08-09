@@ -1,4 +1,5 @@
-﻿@inject NewProject.Data.AppDbContext _context
+﻿@using YourProject.Models
+@inject NewProject.Data.AppDbContext _context
 @model IEnumerable<PostModels>
 @{
     ViewData["Title"] = ViewBag.ProfileUsername + " • Profil";
@@ -6,13 +7,23 @@
 
     bool isMyProfile = ViewBag.IsMyProfile != null && (bool)ViewBag.IsMyProfile;
     bool isFollowing = ViewBag.IsFollowing != null && (bool)ViewBag.IsFollowing;
+    bool hasPendingRequest = ViewBag.HasPendingRequest != null && (bool)ViewBag.HasPendingRequest;
+    bool canSeePosts = ViewBag.CanSeePosts != null && (bool)ViewBag.CanSeePosts;
 
     var profileStoriesList = ViewBag.ProfileStoriesList as List<Story> ?? new List<Story>();
     bool hasProfileStory = profileStoriesList.Any();
 
+    // DÜZELTME: Hesap gizli ise VE kendi profilimiz değilse VE takip etmiyorsak hikaye halkası görünmesin!
+    var profileUserObj = ViewBag.ProfileUser;
+    bool isTargetPrivate = profileUserObj != null && profileUserObj.IsPrivate;
+    bool canSeeStory = isMyProfile || !isTargetPrivate || isFollowing;
+
+    bool hasValidStory = hasProfileStory && canSeeStory;
+    string profileRingClass = hasValidStory ? "has-story" : "";
+
     var seenList = ViewBag.SeenStoryIds as List<int> ?? new List<int>();
-    bool isProfileStoriesAllSeen = hasProfileStory && profileStoriesList.All(s => seenList.Contains(s.Id));
-    string profileRingClass = hasProfileStory ? (isProfileStoriesAllSeen ? "seen-story" : "has-story") : "";
+    bool isProfileStoriesAllSeen = hasValidStory && profileStoriesList.All(s => seenList.Contains(s.Id));
+    if (isProfileStoriesAllSeen) { profileRingClass = "seen-story"; }
 }
 
 <!-- ARAMA MODALI -->
@@ -78,7 +89,15 @@
                 </button>
             </li>
             <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-clapperboard"></i> <span class="ig-nav-label">Reels</span></a></li>
-            <li><a href="#" class="ig-nav-item"><i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span></a></li>
+            <li>
+                <a href="/Home/Notifications" class="ig-nav-item" style="position: relative;">
+                    <i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span>
+                    @if (ViewBag.HasUnreadNotifications != null && (bool)ViewBag.HasUnreadNotifications)
+                    {
+                        <span style="position: absolute; top: 14px; left: 24px; width: 7px; height: 7px; background: #ed4956; border-radius: 50%;"></span>
+                    }
+                </a>
+            </li>
             <li><a href="/Home/Profile/@currentUsername" class="ig-nav-item active"><img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" class="ig-nav-avatar" /> <span class="ig-nav-label">Profil</span></a></li>
         </ul>
         <div class="ig-sidebar-bottom">
@@ -116,8 +135,8 @@
                 </div>
                 <div class="ig-profile-stats-row">
                     <span><strong>@ViewBag.PostCount</strong> gönderi</span>
-                    <span><strong><span id="followerCountDisplay">@ViewBag.FollowersCount</span></strong> takipçi</span>
-                    <span><strong>@ViewBag.FollowingCount</strong> takip edilen</span>
+                    <span onclick="openFollowModal('@ViewBag.ProfileUsername', 'followers')" style="cursor: pointer;"><strong><span id="followerCountDisplay">@ViewBag.FollowersCount</span></strong> takipçi</span>
+                    <span onclick="openFollowModal('@ViewBag.ProfileUsername', 'following')" style="cursor: pointer;"><strong>@ViewBag.FollowingCount</strong> takip edilen</span>
                 </div>
                 <div class="ig-profile-bio-section">
                     <span class="ig-profile-fullname">@ViewBag.ProfileUsername</span>
@@ -126,12 +145,20 @@
                 <div class="ig-profile-actions-row">
                     @if (isMyProfile)
                     {
-                        <a href="#" class="ig-edit-profile-btn">Profili düzenle</a>
+                        <button type="button" onclick="openEditModal()" class="ig-edit-profile-btn" style="background: var(--ig-border); color: var(--ig-text); border: none; cursor: pointer;">Profili düzenle</button>
                         <a href="#" class="ig-edit-profile-btn">Arşivi gör</a>
+                    }
+                    else if (ViewBag.HasIncomingRequest != null && (bool)ViewBag.HasIncomingRequest)
+                    {
+                        <!-- BU KİŞİ SANA İSTEK ATMIŞSA "ONAYLA" VE "SİL" ÇIKSIN -->
+                        <button onclick="respondRequest(@ViewBag.IncomingRequestId, 'accept')" style="background: #0095f6; color: white; border: none; padding: 7px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Onayla</button>
+                        <button onclick="respondRequest(@ViewBag.IncomingRequestId, 'reject')" style="background: #262626; color: white; border: none; padding: 7px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Sil</button>
                     }
                     else
                     {
-                        <button type="button" id="followBtn" class="ig-follow-main-btn @(isFollowing ? "following" : "")" onclick="toggleFollow('@ViewBag.ProfileUsername')">@(isFollowing ? "Takipten Çık" : "Takip Et")</button>
+                        <button type="button" id="followBtn" class="ig-follow-main-btn @(isFollowing ? "following" : "")" onclick="toggleFollow('@ViewBag.ProfileUsername')">
+                            @(isFollowing ? "Takipten Çık" : "Takip Et")
+                        </button>
                         <button type="button" class="ig-message-btn-wide">Mesaj Gönder</button>
                     }
                 </div>
@@ -151,41 +178,61 @@
             </div>
         </div>
 
-        <div class="ig-user-posts-grid">
-            @if (Model == null || !Model.Any())
-            {
-                <div class="ig-no-posts-box">
-                    <div class="ig-empty-camera-icon"><i class="fa-solid fa-camera"></i></div>
-                    <h3>Gönderi Yok</h3>
-                    <p>Henüz bir gönderi paylaşılmadı.</p>
-                </div>
-            }
-            else
-            {
-                @foreach (var post in Model)
+        @if (canSeePosts)
+        {
+            <div class="ig-user-posts-grid">
+                @if (Model == null || !Model.Any())
                 {
-                    <div class="ig-grid-post-card">
-                        @if (!string.IsNullOrEmpty(post.MediaUrl))
-                        {
-                            <div class="ig-grid-media">
-                                @if (post.MediaType == "video")
-                                {
-                                    <video src="@post.MediaUrl"></video>
-                                }
-                                else
-                                {
-                                    <img src="@post.MediaUrl" alt="Post" />
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="ig-grid-text-only"><p>@post.Content</p></div>
-                        }
+                    <div class="ig-no-posts-box">
+                        <div class="ig-empty-camera-icon"><i class="fa-solid fa-camera"></i></div>
+                        <h3>Gönderi Yok</h3>
+                        <p>Henüz bir gönderi paylaşılmadı.</p>
                     </div>
                 }
-            }
-        </div>
+                else
+                {
+                    @foreach (var post in Model)
+                    {
+                        <div class="ig-grid-post-card" onclick="openPostModal(@post.Id)" style="cursor: pointer; position: relative;">
+                            @if (!string.IsNullOrEmpty(post.MediaUrl))
+                            {
+                                <div class="ig-grid-media" style="width: 100%; height: 100%; position: relative;">
+                                    @if (post.MediaType == "video")
+                                    {
+                                        <video src="@post.MediaUrl" style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                    }
+                                    else
+                                    {
+                                        <img src="@post.MediaUrl" alt="Post" style="width: 100%; height: 100%; object-fit: cover;" />
+                                    }
+                                    <!-- HOVER (ÜZERİNE GELİNCE ÇIKAN BEĞENİ VE YORUM SAYISI) -->
+                                    <div class="ig-grid-hover-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center; gap: 24px; color: white; font-weight: 600; font-size: 15px;">
+                                        <span><i class="fa-solid fa-heart"></i> @post.Likes.Count</span>
+                                        <span><i class="fa-solid fa-comment"></i> @post.Comments.Count</span>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="ig-grid-text-only" style="padding: 16px; font-size: 13px; color: var(--ig-text); height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center;">
+                                    <p>@post.Content</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                
+            </div>
+        }
+        else
+        {
+            <!-- HESAP GİZLİ VE TAKİP EDİLMİYORSA -->
+            <div class="ig-private-account-box" style="text-align: center; padding: 60px 20px; color: var(--ig-text-muted);">
+                <i class="fa-solid fa-lock fa-3x mb-3" style="margin-bottom: 15px; display: block;"></i>
+                <h3 style="font-size: 18px; color: var(--ig-text); margin-bottom: 8px;">Bu Hesap Gizli</h3>
+                <p style="font-size: 14px; margin: 0;">Bu hesabın fotoğraf ve videolarını görmek için takip etmelisin.</p>
+            </div>
+        }
     </main>
 </div>
 
@@ -238,6 +285,55 @@
     </div>
 </div>
 
+
+<!-- PROFİLİ DÜZENLE MODALI -->
+<div id="editProfileModal" class="ig-logout-modal-overlay" style="display: none;" onclick="closeEditModalOnOutside(event)">
+    <div class="ig-logout-modal-box" style="width: 400px; padding: 20px; text-align: left;">
+        <div class="ig-search-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ig-border); padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 16px;">Profili Düzenle</h3>
+            <button type="button" onclick="closeEditModal()" class="ig-search-close-btn">✕</button>
+        </div>
+        <form asp-action="UpdateProfile" method="post" enctype="multipart/form-data">
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Biyografi</label>
+                <textarea name="bio" class="ig-modal-search-input" style="height: 80px; resize: none;">@ViewBag.ProfileUserBio</textarea>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Profil Fotoğrafı Seç</label>
+                <input type="file" name="profilePicture" accept="image/*" style="color: #fff; font-size: 13px;" />
+            </div>
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="isPrivateCheckbox" name="isPrivate" value="true" @(ViewBag.ProfileUser != null && ViewBag.ProfileUser.IsPrivate ? "checked" : "") style="width: 18px; height: 18px; cursor: pointer;" />
+                <label for="isPrivateCheckbox" style="font-size: 14px; cursor: pointer; font-weight: 500;">Hesabım Gizli</label>
+            </div>
+            <button type="submit" style="width: 100%; background: var(--ig-primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer;">Değişiklikleri Kaydet</button>
+        </form>
+    </div>
+</div>
+
+<!-- TAKİPÇİ / TAKİP EDİLEN LİSTESİ MODALI -->
+<div id="followListModal" class="ig-logout-modal-overlay" style="display: none;" onclick="closeFollowModalOnOutside(event)">
+    <div class="ig-logout-modal-box" style="width: 400px; height: 450px; background: #262626; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #363636;">
+            <h3 id="followModalTitle" style="margin: 0; font-size: 15px; color: #fff;">Takipçiler</h3>
+            <button type="button" onclick="closeFollowModal()" style="background: none; border: none; color: #737373; font-size: 16px; cursor: pointer;">✕</button>
+        </div>
+        <div id="followModalResults" style="flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dinamik liste buraya gelecek -->
+        </div>
+    </div>
+</div>
+
+<!-- GÖNDERİ DETAY (LIGHTBOX) MODALI -->
+<div id="postDetailModal" class="ig-logout-modal-overlay" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 9999999;" onclick="closePostModalOnOutside(event)">
+    <button type="button" onclick="closePostModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 28px; cursor: pointer; z-index: 10000;">✕</button>
+    <div id="postModalContentBox" style="background: #000; border: 1px solid #262626; border-radius: 4px; overflow: hidden; display: flex; max-width: 1000px; width: 90vw; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.8);" onclick="event.stopPropagation()">
+        <!-- İçerik AJAX ile yüklenecek -->
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <style>
     :root {
         --ig-bg: #000;
@@ -281,7 +377,6 @@
         backdrop-filter: blur(4px);
     }
 
-    /* HİKAYE ÖNİZLEME MODALI SABİT VE SORUNSUZ */
     .ig-story-preview-overlay-fixed {
         position: fixed !important;
         top: 0 !important;
@@ -318,12 +413,12 @@
         justify-content: center;
     }
 
-        .ig-story-preview-media img, .ig-story-preview-media video {
-            max-width: 100%;
-            max-height: 320px;
-            border-radius: 8px;
-            object-fit: contain;
-        }
+    .ig-story-preview-media img, .ig-story-preview-media video {
+        max-width: 100%;
+        max-height: 320px;
+        border-radius: 8px;
+        object-fit: contain;
+    }
 
     .ig-story-preview-footer {
         padding: 14px 20px;
@@ -355,7 +450,6 @@
         cursor: pointer;
     }
 
-    /* HİKAYE OYNATICISI KESİN ORTALAMA VE BOYUTLANDIRMA */
     .ig-story-viewer-modal {
         position: fixed !important;
         top: 0 !important;
@@ -406,12 +500,12 @@
         cursor: default !important;
     }
 
-        .ig-story-media-box img, .ig-story-media-box video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain !important;
-            cursor: default !important;
-        }
+    .ig-story-media-box img, .ig-story-media-box video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+        cursor: default !important;
+    }
 
     .ig-search-modal-box {
         width: 480px;
@@ -435,11 +529,11 @@
         margin-bottom: 16px;
     }
 
-        .ig-search-modal-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-        }
+    .ig-search-modal-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
 
     .ig-search-close-btn {
         background: none;
@@ -486,9 +580,9 @@
         color: inherit;
     }
 
-        .ig-search-result-item:hover {
-            background: var(--ig-hover);
-        }
+    .ig-search-result-item:hover {
+        background: var(--ig-hover);
+    }
 
     .ig-search-user-info {
         display: flex;
@@ -531,12 +625,12 @@
         border-bottom: 1px solid #363636;
     }
 
-        .ig-story-create-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin: 0;
-            color: #fff;
-        }
+    .ig-story-create-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: #fff;
+    }
 
     .ig-story-create-options {
         padding: 20px;
@@ -559,10 +653,10 @@
         gap: 12px;
     }
 
-        .ig-story-option-btn i {
-            font-size: 18px;
-            color: var(--ig-primary);
-        }
+    .ig-story-option-btn i {
+        font-size: 18px;
+        color: var(--ig-primary);
+    }
 
     .ig-sidebar {
         width: 72px;
@@ -582,9 +676,9 @@
         overflow: hidden;
     }
 
-        .ig-sidebar:hover {
-            width: 244px;
-        }
+    .ig-sidebar:hover {
+        width: 244px;
+    }
 
     .ig-logo-area {
         display: flex;
@@ -623,18 +717,18 @@
         box-sizing: border-box;
     }
 
-        .ig-nav-item i, .ig-bottom-item i {
-            font-size: 20px !important;
-            width: 24px;
-            text-align: center;
-            display: inline-block;
-            flex-shrink: 0;
-        }
+    .ig-nav-item i, .ig-bottom-item i {
+        font-size: 20px !important;
+        width: 24px;
+        text-align: center;
+        display: inline-block;
+        flex-shrink: 0;
+    }
 
-        .ig-nav-item:hover, .ig-nav-item.active {
-            background-color: var(--ig-hover);
-            font-weight: 600;
-        }
+    .ig-nav-item:hover, .ig-nav-item.active {
+        background-color: var(--ig-hover);
+        font-weight: 600;
+    }
 
     .ig-nav-avatar {
         width: 24px !important;
@@ -667,9 +761,9 @@
         text-align: left;
     }
 
-        .ig-bottom-item:hover {
-            background-color: var(--ig-hover);
-        }
+    .ig-bottom-item:hover {
+        background-color: var(--ig-hover);
+    }
 
     .ig-profile-main {
         flex: 1;
@@ -698,15 +792,15 @@
         position: relative;
     }
 
-        .ig-profile-avatar-outer.has-story {
-            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-            padding: 3px;
-        }
+    .ig-profile-avatar-outer.has-story {
+        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        padding: 3px;
+    }
 
-        .ig-profile-avatar-outer.seen-story {
-            background: #dbdbdb !important;
-            padding: 3px;
-        }
+    .ig-profile-avatar-outer.seen-story {
+        background: #dbdbdb !important;
+        padding: 3px;
+    }
 
     .ig-profile-avatar-container {
         width: 142px;
@@ -784,9 +878,9 @@
         cursor: pointer;
     }
 
-        .ig-edit-profile-btn:hover, .ig-message-btn-wide:hover {
-            opacity: 0.8;
-        }
+    .ig-edit-profile-btn:hover, .ig-message-btn-wide:hover {
+        opacity: 0.8;
+    }
 
     .ig-follow-main-btn {
         background: var(--ig-primary);
@@ -799,10 +893,15 @@
         cursor: pointer;
     }
 
-        .ig-follow-main-btn.following {
-            background: var(--ig-border);
-            color: var(--ig-text);
-        }
+    .ig-follow-main-btn.following {
+        background: var(--ig-border);
+        color: var(--ig-text);
+    }
+
+    .ig-follow-main-btn.pending {
+        background: #efefef;
+        color: #262626;
+    }
 
     .ig-profile-stats-row {
         display: flex;
@@ -853,10 +952,10 @@
         margin-top: -1px;
     }
 
-        .ig-profile-tab-item.active {
-            color: var(--ig-text);
-            border-top: 1px solid var(--ig-text);
-        }
+    .ig-profile-tab-item.active {
+        color: var(--ig-text);
+        border-top: 1px solid var(--ig-text);
+    }
 
     .ig-user-posts-grid {
         display: grid;
@@ -879,11 +978,11 @@
         height: 100%;
     }
 
-        .ig-grid-media img, .ig-grid-media video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+    .ig-grid-media img, .ig-grid-media video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
 
     .ig-grid-text-only {
         padding: 16px;
@@ -932,7 +1031,6 @@
         margin: 0;
     }
 
-    /* ÇIKIŞ ONAY MODALI STİLLERİ */
     .ig-logout-modal-overlay {
         position: fixed;
         top: 0;
@@ -962,18 +1060,18 @@
         border-bottom: 1px solid var(--ig-border);
     }
 
-        .ig-logout-modal-header h3 {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--ig-text);
-        }
+    .ig-logout-modal-header h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ig-text);
+    }
 
-        .ig-logout-modal-header p {
-            margin: 0;
-            font-size: 13px;
-            color: var(--ig-text-muted);
-        }
+    .ig-logout-modal-header p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ig-text-muted);
+    }
 
     .ig-logout-modal-actions {
         display: flex;
@@ -992,9 +1090,9 @@
         cursor: pointer;
     }
 
-        .ig-logout-confirm-btn:hover {
-            background: rgba(237, 73, 86, 0.1);
-        }
+    .ig-logout-confirm-btn:hover {
+        background: rgba(237, 73, 86, 0.1);
+    }
 
     .ig-logout-cancel-btn {
         padding: 14px;
@@ -1005,11 +1103,10 @@
         cursor: pointer;
     }
 
-        .ig-logout-cancel-btn:hover {
-            background: var(--ig-hover);
-        }
+    .ig-logout-cancel-btn:hover {
+        background: var(--ig-hover);
+    }
 
-    /* AÇIK / KOYU TEMA DESTEĞİ */
     body.light-theme {
         --ig-bg: #fafafa;
         --ig-card-bg: #fff;
@@ -1020,7 +1117,6 @@
         --ig-hover: rgba(0, 0, 0, 0.05);
     }
 
-    /* HİKAYE OYNATICISI ÜST BİLGİ VE KONTROLLER */
     .ig-story-backdrop-blur {
         position: absolute;
         top: 0;
@@ -1120,12 +1216,12 @@
         padding: 5px;
     }
 
-        .ig-story-dots-btn span {
-            width: 4px;
-            height: 4px;
-            background: white;
-            border-radius: 50%;
-        }
+    .ig-story-dots-btn span {
+        width: 4px;
+        height: 4px;
+        background: white;
+        border-radius: 50%;
+    }
 
     .ig-story-menu-wrapper {
         position: relative;
@@ -1154,9 +1250,9 @@
         text-align: left;
     }
 
-        .ig-story-delete-item:hover {
-            background: rgba(255,255,255,0.05);
-        }
+    .ig-story-delete-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
 
     .ig-story-footer-actions {
         position: absolute;
@@ -1169,20 +1265,20 @@
         z-index: 10;
     }
 
-        .ig-story-footer-actions input {
-            flex: 1;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 20px;
-            padding: 10px 16px;
-            color: white;
-            outline: none;
-            font-size: 13px;
-        }
+    .ig-story-footer-actions input {
+        flex: 1;
+        background: transparent;
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 20px;
+        padding: 10px 16px;
+        color: white;
+        outline: none;
+        font-size: 13px;
+    }
 
-            .ig-story-footer-actions input::placeholder {
-                color: rgba(255,255,255,0.6);
-            }
+    .ig-story-footer-actions input::placeholder {
+        color: rgba(255,255,255,0.6);
+    }
 
     .ig-story-like-btn, .ig-story-send-btn {
         background: none;
@@ -1193,11 +1289,10 @@
         padding: 4px;
     }
 
-        .ig-story-like-btn i.liked {
-            color: #ed4956;
-        }
+    .ig-story-like-btn i.liked {
+        color: #ed4956;
+    }
 
-    /* KESİN VE EKSİKSİZ PROFİL SAYFASI MOBİL UYUMLULUK (RESPONSIVE) TASARIMI */
     @@media screen and (max-width: 768px) {
         html, body {
             margin: 0 !important;
@@ -1221,7 +1316,6 @@
             padding: 0 !important;
         }
 
-        /* Profil ana alanının yüksekliğini içeriğe sabitliyoruz, alttaki gereksiz siyah boşluk kalmıyor */
         .ig-profile-main {
             margin-left: 0 !important;
             padding: 16px 12px 20px 12px !important;
@@ -1233,7 +1327,6 @@
             background-color: var(--ig-bg, #000) !important;
         }
 
-        /* Profil Header'ını mobilde dikey ve Instagram tarzı yap */
         .ig-profile-header {
             flex-direction: column !important;
             align-items: center !important;
@@ -1279,7 +1372,6 @@
             font-weight: 600 !important;
         }
 
-        /* Butonlar alt alta değil, tam istediğin gibi isim/bio altında yan yana duracak */
         .ig-profile-actions-row {
             flex-direction: row !important;
             justify-content: center !important;
@@ -1311,7 +1403,6 @@
             width: 100% !important;
         }
 
-        /* Sekme çubuğunu ortala */
         .ig-profile-tabs-bar {
             gap: 40px !important;
             margin-top: 10px !important;
@@ -1319,7 +1410,7 @@
         }
 
         .ig-profile-tab-item span {
-            display: none !important; /* Mobilde sadece ikonlar kalsın */
+            display: none !important;
         }
 
         .ig-profile-tab-item {
@@ -1327,7 +1418,6 @@
             padding: 10px 0 !important;
         }
 
-        /* Gönderi grid yapısını mobilde tam oturt ve arkadaki siyahlığı kes */
         .ig-user-posts-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             gap: 3px !important;
@@ -1341,7 +1431,6 @@
             border: none !important;
         }
 
-        /* Sol menüyü ekranın en altına sabit çubuk yap */
         .ig-sidebar {
             position: fixed !important;
             bottom: 0 !important;
@@ -1364,16 +1453,16 @@
             overflow: visible !important;
         }
 
-            .ig-sidebar:hover {
-                width: 100vw !important;
-            }
+        .ig-sidebar:hover {
+            width: 100vw !important;
+        }
 
-            .ig-sidebar span, 
-            .ig-logo-area, 
-            .ig-sidebar-bottom, 
-            .ig-nav-label {
-                display: none !important;
-            }
+        .ig-sidebar span, 
+        .ig-logo-area, 
+        .ig-sidebar-bottom, 
+        .ig-nav-label {
+            display: none !important;
+        }
 
         .ig-nav-list {
             display: flex !important;
@@ -1391,6 +1480,10 @@
             gap: 0 !important;
             justify-content: center !important;
         }
+    }
+
+    .ig-grid-post-card:hover .ig-grid-hover-overlay {
+        display: flex !important;
     }
 </style>
 
@@ -1418,22 +1511,43 @@
             if (users.length === 0) { container.innerHTML = '<div class="ig-search-placeholder">Sonuç bulunamadı.</div>'; return; }
             let html = '';
             users.forEach(u => {
-                html += `<a href="/Home/Profile?username=${encodeURIComponent(u.username)}" class="ig-search-result-item"><div class="ig-search-user-info"><img src="${u.profilePicture}" class="ig-search-avatar" /><div><span class="ig-search-username">${u.username}</span><span class="ig-search-bio">${u.bio}</span></div></div></a>`;
+                html += `<a href="/Home/UserProfile/${encodeURIComponent(u.username)}" class="ig-search-result-item"><div class="ig-search-user-info"><img src="${u.profilePicture}" class="ig-search-avatar" /><div><span class="ig-search-username">${u.username}</span><span class="ig-search-bio">${u.bio}</span></div></div></a>`;
             });
             container.innerHTML = html;
         });
     }
+
     function toggleFollow(targetUsername) {
-        fetch('/Home/ToggleFollow?targetUsername=' + encodeURIComponent(targetUsername), { method: 'POST', headers: { 'Content-Type': 'application/json' } }).then(res => res.json()).then(data => {
-            if (data.success) {
-                const btn = document.getElementById('followBtn');
-                const countSpan = document.getElementById('followerCountDisplay');
-                btn.textContent = data.isFollowing ? "Takipten Çık" : "Takip Et";
-                if (data.isFollowing) btn.classList.add('following'); else btn.classList.remove('following');
+    fetch('/Home/ToggleFollowRequest?targetUsername=' + encodeURIComponent(targetUsername), { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' } 
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            const btn = document.getElementById('followBtn');
+            const countSpan = document.getElementById('followerCountDisplay');
+
+            if (data.status === "following") {
+                btn.textContent = "Takipten Çık";
+                btn.className = "ig-follow-main-btn following";
+            } else if (data.status === "unfollowed") {
+                btn.textContent = "Takip Et";
+                btn.className = "ig-follow-main-btn";
+            } else if (data.status === "pending") {
+                btn.textContent = "İstek Gönderildi";
+                btn.className = "ig-follow-main-btn pending";
+            } else if (data.status === "cancelled") {
+                btn.textContent = "Takip Et";
+                btn.className = "ig-follow-main-btn";
+            }
+            
+            if (data.followerCount !== undefined && countSpan) {
                 countSpan.textContent = data.followerCount;
             }
-        });
-    }
+        }
+    });
+}
 
     let currentStories = [];
     let currentStoryIndex = 0;
@@ -1709,6 +1823,86 @@
             if (themeText) themeText.textContent = "Tema: Açık";
         }
     });
-</script>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    function openEditModal() {
+    document.getElementById('editProfileModal').style.display = 'flex';
+}
+function closeEditModal() {
+    document.getElementById('editProfileModal').style.display = 'none';
+}
+function closeEditModalOnOutside(event) {
+    const modal = document.getElementById('editProfileModal');
+    if (event.target === modal) modal.style.display = 'none';
+}
+
+    function openFollowModal(username, type) {
+        const modal = document.getElementById('followListModal');
+        const title = document.getElementById('followModalTitle');
+        const container = document.getElementById('followModalResults');
+
+        title.textContent = type === 'followers' ? 'Takipçiler' : 'Takip Edilenler';
+        container.innerHTML = '<div style="text-align:center; color:#737373; margin-top:40px;">Yükleniyor...</div>';
+        modal.style.display = 'flex';
+
+        const endpoint = type === 'followers' ? '/Home/GetFollowersList?username=' : '/Home/GetFollowingList?username=';
+
+        fetch(endpoint + encodeURIComponent(username))
+            .then(res => res.json())
+            .then(users => {
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#737373; margin-top:40px;">Kişi bulunamadı.</div>';
+                    return;
+                }
+                let html = '';
+                users.forEach(u => {
+                    html += `
+                        <a href="/Home/UserProfile/${encodeURIComponent(u.username)}" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: inherit;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="${u.profilePicture}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                                <div>
+                                    <span style="font-weight: 600; font-size: 13px; color: #fff; display: block;">${u.username}</span>
+                                    <span style="font-size: 12px; color: #737373;">${u.bio}</span>
+                                </div>
+                            </div>
+                        </a>`;
+                });
+                container.innerHTML = html;
+            });
+    }
+
+    function closeFollowModal() {
+        document.getElementById('followListModal').style.display = 'none';
+    }
+
+    function closeFollowModalOnOutside(event) {
+        const modal = document.getElementById('followListModal');
+        if (event.target === modal) modal.style.display = 'none';
+    }
+
+
+    function openPostModal(postId) {
+    const modal = document.getElementById('postDetailModal');
+    const box = document.getElementById('postModalContentBox');
+    
+    box.innerHTML = '<div style="padding: 60px; color: #737373; margin: auto;">Yükleniyor...</div>';
+    modal.style.display = 'flex';
+
+    // HomeController'da bu gönderinin detayını HTML olarak döndüren bir endpoint'e bağlanabilir
+    // Veya basitçe ana sayfadaki post kartının yapısını buraya AJAX ile çekebiliriz.
+    fetch('/Home/GetPostDetails?postId=' + postId)
+        .then(res => res.text())
+        .then(html => {
+            box.innerHTML = html;
+        });
+}
+
+function closePostModal() {
+    document.getElementById('postDetailModal').style.display = 'none';
+}
+
+function closePostModalOnOutside(event) {
+    const modal = document.getElementById('postDetailModal');
+    if (event.target === modal) modal.style.display = 'none';
+}
+
+</script>

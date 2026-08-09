@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using NewProject.Data;
+using NewProject.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,13 +22,14 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// HATA BURadaydı: Parantez eksikti ve DbContext arada kaynıyordu. Düzeltilmiş hali:
-
-
 builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
+
 // DbContext Servisi
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// SIGNALR SERVİSİ BURAYA (BUILD ÖNCESİNE) EKLENDİ
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -56,5 +58,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
+
+// SIGNALR HUB HARİTALAMASI (ENDPOINT) BURAYA EKLENDİ
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NewProject.Data;
@@ -6,7 +8,13 @@ using NewProject.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+
+
 
 public class HomeController : Controller
 {
@@ -20,8 +28,12 @@ public class HomeController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-      
+
         string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        bool hasUnread = _context.FollowRequests.Any(fr => fr.ReceiverUsername.ToLower() == currentUsername.ToLower() && fr.Status == "Pending");
+        ViewBag.HasUnreadNotifications = hasUnread;
+
+
         if (string.IsNullOrEmpty(currentUsername))
         {
             return RedirectToAction("Login", "Account");
@@ -156,8 +168,8 @@ public class HomeController : Controller
             .Include(p => p.Comments)
             .Include(p => p.Likes)
             .FirstOrDefault(p => p.Id == id);
-      
-        
+
+
         if (post != null && post.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
         {
             _context.Comments.RemoveRange(post.Comments);
@@ -310,7 +322,12 @@ public class HomeController : Controller
     [Route("Home/Profile/{username?}")]
     public IActionResult Profile(string username)
     {
+
         string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        bool hasUnread = _context.FollowRequests.Any(fr => fr.ReceiverUsername.ToLower() == currentUsername.ToLower() && fr.Status == "Pending");
+        ViewBag.HasUnreadNotifications = hasUnread;
+
+
         if (string.IsNullOrEmpty(currentUsername))
         {
             return RedirectToAction("Login", "Account");
@@ -352,6 +369,14 @@ public class HomeController : Controller
             .Select(i => i.StoryId)
             .ToList();
 
+        bool isMyProfile = profileUser.Username.ToLower() == currentUsername.ToLower();
+
+        bool canSeePosts = isMyProfile || !profileUser.IsPrivate || isFollowing;
+
+        userPosts = canSeePosts
+           ? _context.Posts.Where(p => p.Username.ToLower() == username.ToLower()).OrderByDescending(p => p.Date).ToList()
+           : new List<PostModels>();
+
         // ViewBag Değişkenleri (Arayüzün patlamaması için dolduruyoruz)
         ViewBag.ActiveUser = activeUser;
         ViewBag.ProfileUsername = profileUser.Username;
@@ -364,6 +389,9 @@ public class HomeController : Controller
         ViewBag.IsFollowing = isFollowing;
         ViewBag.ProfileStoriesList = profileStoriesList;
         ViewBag.SeenStoryIds = seenStoryIds;
+        ViewBag.CanSeePosts = canSeePosts;
+        ViewBag.IsMyProfile = isMyProfile;
+        ViewBag.ProfileUser = profileUser; // Hikaye halkası kontrolü için bunu ekledik!
 
         return View(userPosts);
     }
@@ -380,7 +408,8 @@ public class HomeController : Controller
 
         var users = _context.Users
             .Where(u => u.Username.ToLower().Contains(searchKey))
-            .Select(u => new {
+            .Select(u => new
+            {
                 username = u.Username,
                 profilePicture = !string.IsNullOrEmpty(u.ProfilePicturePath) ? u.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                 bio = u.Bio ?? "Sosyal Medya Kullanıcısı"
@@ -439,7 +468,7 @@ public class HomeController : Controller
         return RedirectToAction("Index");
     }
 
-  
+
     [HttpGet]
     public IActionResult DeleteStory(int id)
     {
@@ -464,9 +493,22 @@ public class HomeController : Controller
     [HttpGet]
     public IActionResult GetUserStories(string username)
     {
-        if (string.IsNullOrEmpty(username)) return Json(new List<object>());
 
         string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+
+        var targetUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
+        bool isFollowing = _context.Follows.Any(f => f.FollowerUsername.ToLower() == currentUsername.ToLower() && f.FollowingUsername.ToLower() == username.ToLower());
+
+        // Eğer hesap gizli ve takip etmiyorsan hikayeleri boş döndür!
+        if (targetUser != null && targetUser.IsPrivate && !isFollowing && !string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new List<object>());
+        }
+
+
+        if (string.IsNullOrEmpty(username)) return Json(new List<object>());
+
+
         DateTime limit = DateTime.Now.AddHours(-24);
 
         var list = _context.Stories
@@ -477,7 +519,8 @@ public class HomeController : Controller
         var user = _context.Users.FirstOrDefault(u => u.Username.ToLower() == username.ToLower());
         string userPic = user?.ProfilePicturePath ?? "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-        var result = list.Select(s => new {
+        var result = list.Select(s => new
+        {
             id = s.Id,
             username = s.Username,
             mediaUrl = s.MediaUrl,
@@ -494,7 +537,7 @@ public class HomeController : Controller
     [HttpPost]
     public IActionResult InteractStory(int storyId, string type, string commentText = "")
     {
-        string username = HttpContext.Session.GetString("GirisYapanKullanici")?? string.Empty;
+        string username = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
         if (string.IsNullOrEmpty(username))
         {
             return Json(new { success = false, message = "Oturum açılmamış." });
@@ -581,21 +624,20 @@ public class HomeController : Controller
     }
 
 
-   [HttpPost]
+    [HttpPost]
+    [HttpPost]
     public IActionResult SendMessage(string receiverUsername, string content)
     {
         string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
         if (string.IsNullOrEmpty(currentUsername) || string.IsNullOrWhiteSpace(content))
             return Json(new { success = false });
 
-        // Bu sohbet daha önce sessize alınmış mı kontrol edelim
         var existingMessage = _context.Messages
             .Where(m => (m.SenderUsername == currentUsername && m.ReceiverUsername == receiverUsername) ||
                         (m.SenderUsername == receiverUsername && m.ReceiverUsername == currentUsername))
             .OrderByDescending(m => m.Date)
             .FirstOrDefault();
 
-        // Eğer daha önce sessize alınmışsa, yeni mesajda da bu durumu koruyalım
         bool currentMuteState = existingMessage?.IsMuted ?? false;
 
         var msg = new MessageModels
@@ -605,7 +647,7 @@ public class HomeController : Controller
             Content = content,
             Date = DateTime.Now,
             IsRead = false,
-            IsMuted = currentMuteState // Önceki sessizlik durumu korunuyor!
+            IsMuted = currentMuteState
         };
 
         _context.Messages.Add(msg);
@@ -613,7 +655,6 @@ public class HomeController : Controller
 
         return Json(new { success = true });
     }
-
 
     [HttpGet]
     public IActionResult GetConversations()
@@ -710,7 +751,8 @@ public class HomeController : Controller
         var users = _context.Users
             .Where(u => u.Username.ToLower().Contains(q.ToLower()) && u.Username.ToLower() != currentUsername.ToLower())
             .Take(10)
-            .Select(u => new {
+            .Select(u => new
+            {
                 username = u.Username,
                 profilePicture = !string.IsNullOrEmpty(u.ProfilePicturePath) ? u.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                 bio = u.Bio
@@ -746,7 +788,7 @@ public class HomeController : Controller
         return Json(new { success = true });
     }
 
-    [HttpGet]
+    
     [HttpGet]
     public IActionResult GetChatMessages(string partnerUsername)
     {
@@ -757,7 +799,8 @@ public class HomeController : Controller
             .Where(m => !m.IsDraft && ((m.SenderUsername == currentUsername && m.ReceiverUsername == partnerUsername) ||
                         (m.SenderUsername == partnerUsername && m.ReceiverUsername == currentUsername)))
             .OrderBy(m => m.Date)
-            .Select(m => new {
+            .Select(m => new
+            {
                 id = m.Id, // EKLENDİ: JavaScript'in mesajı silebilmesi için zorunlu!
                 sender = m.SenderUsername,
                 content = m.Content,
@@ -829,5 +872,439 @@ public class HomeController : Controller
     }
 
 
+
+    // 1. Profil Sayfası Görüntüleme
+    [HttpGet]
+    [Route("Home/UserProfile/{targetUsername}")]
+    public IActionResult UserProfile(string targetUsername)
+    {
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        if (string.IsNullOrEmpty(currentUsername)) return RedirectToAction("Login", "Account");
+
+        if (string.Equals(currentUsername, targetUsername, StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Profile");
+
+        var targetUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == targetUsername.ToLower());
+        if (targetUser == null) return NotFound();
+
+        // Takip ediyor muyuz kontrolü
+        bool isFollowing = _context.Follows.Any(f =>
+            f.FollowerUsername.ToLower() == currentUsername.ToLower() &&
+            f.FollowingUsername.ToLower() == targetUsername.ToLower());
+
+        // KRİTİK DÜZELTME: Hesap açık İSE VEYA takip ediyorsan gönderileri görebilirsin!
+        bool canSeePosts = !targetUser.IsPrivate || isFollowing;
+
+        var userPosts = canSeePosts
+            ? _context.Posts.Where(p => p.Username.ToLower() == targetUsername.ToLower()).OrderByDescending(p => p.Date).ToList()
+            : new List<PostModels>();
+
+        var existingRequest = _context.FollowRequests.FirstOrDefault(f =>
+            f.SenderUsername.ToLower() == currentUsername.ToLower() &&
+            f.ReceiverUsername.ToLower() == targetUsername.ToLower() &&
+            f.Status == "Pending");
+
+        var incomingRequest = _context.FollowRequests.FirstOrDefault(f =>
+            f.SenderUsername.ToLower() == targetUsername.ToLower() &&
+            f.ReceiverUsername.ToLower() == currentUsername.ToLower() &&
+            f.Status == "Pending");
+
+        ViewBag.ActiveUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == currentUsername.ToLower());
+        ViewBag.ProfileUser = targetUser;
+        ViewBag.ProfileUsername = targetUser.Username;
+        ViewBag.ProfileUserBio = targetUser.Bio;
+        ViewBag.ProfileUserPic = targetUser.ProfilePicturePath ?? "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+        ViewBag.CanSeePosts = canSeePosts;
+        ViewBag.IsFollowing = isFollowing;
+        ViewBag.HasPendingRequest = existingRequest != null;
+        ViewBag.HasIncomingRequest = incomingRequest != null;
+        ViewBag.IncomingRequestId = incomingRequest?.Id;
+
+        ViewBag.FollowersCount = _context.Follows.Count(f => f.FollowingUsername.ToLower() == targetUsername.ToLower());
+        ViewBag.FollowingCount = _context.Follows.Count(f => f.FollowingUsername.ToLower() == targetUsername.ToLower());
+        ViewBag.PostCount = _context.Posts.Count(p => p.Username.ToLower() == targetUsername.ToLower());
+
+        return View(userPosts);
+    }
+
+    // 2. Takip Et / İstek Gönder / İptal Et Buton Mantığı
+    [HttpPost]
+    public IActionResult ToggleFollowRequest(string targetUsername)
+    {
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        if (string.IsNullOrEmpty(currentUsername)) return Json(new { success = false });
+
+        if (string.Equals(currentUsername, targetUsername, StringComparison.OrdinalIgnoreCase))
+            return Json(new { success = false });
+
+        var targetUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == targetUsername.ToLower());
+        if (targetUser == null) return Json(new { success = false });
+
+        // Zaten takip ediyor mu?
+        var existingFollow = _context.Follows.FirstOrDefault(f =>
+            f.FollowerUsername.ToLower() == currentUsername.ToLower() &&
+            f.FollowingUsername.ToLower() == targetUsername.ToLower());
+
+        if (existingFollow != null)
+        {
+            // Takipten çık
+            _context.Follows.Remove(existingFollow);
+            _context.SaveChanges();
+            return Json(new { success = true, status = "unfollowed" });
+        }
+
+        // Bekleyen istek var mı?
+        var existingRequest = _context.FollowRequests.FirstOrDefault(f =>
+            f.SenderUsername.ToLower() == currentUsername.ToLower() &&
+            f.ReceiverUsername.ToLower() == targetUsername.ToLower() &&
+            f.Status == "Pending");
+
+        if (existingRequest != null)
+        {
+            // İsteği Geri Çek
+            _context.FollowRequests.Remove(existingRequest);
+            _context.SaveChanges();
+            return Json(new { success = true, status = "cancelled" });
+        }
+
+        if (targetUser.IsPrivate)
+        {
+            // Hesap gizli -> İstek gönder
+            var newRequest = new FollowRequest
+            {
+                SenderUsername = currentUsername,
+                ReceiverUsername = targetUsername,
+                Status = "Pending",
+                CreatedAt = DateTime.Now
+            };
+            _context.FollowRequests.Add(newRequest);
+            _context.SaveChanges();
+            return Json(new { success = true, status = "pending" });
+        }
+        else
+        {
+            // Hesap açık -> Doğrudan takibe başla
+            var newFollow = new Follow
+            {
+                FollowerUsername = currentUsername,
+                FollowingUsername = targetUsername
+            };
+            _context.Follows.Add(newFollow);
+            _context.SaveChanges();
+            return Json(new { success = true, status = "following" });
+        }
+    }
+
+    // 3. Bildirimler Sayfası (Takip İsteklerini Listeleme)
+    [HttpGet]
+    public IActionResult Notifications()
+    {
+
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        bool hasUnread = _context.FollowRequests.Any(fr => fr.ReceiverUsername.ToLower() == currentUsername.ToLower() && fr.Status == "Pending");
+        ViewBag.HasUnreadNotifications = hasUnread;
+
+
+        if (string.IsNullOrEmpty(currentUsername)) return RedirectToAction("Login", "Account");
+
+        // Bana gelen bekleyen (Pending) takip istekleri
+        var pendingRequests = _context.FollowRequests
+            .Where(fr => fr.ReceiverUsername.ToLower() == currentUsername.ToLower() && fr.Status == "Pending")
+            .OrderByDescending(fr => fr.CreatedAt)
+            .ToList();
+
+        // İstek atan kullanıcıların profil fotoğraflarını vb. rahat çekebilmek için:
+        var requestListWithDetails = new List<object>();
+        foreach (var req in pendingRequests)
+        {
+            var senderUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == req.SenderUsername.ToLower());
+            requestListWithDetails.Add(new
+            {
+                RequestId = req.Id,
+                SenderUsername = req.SenderUsername,
+                SenderProfilePic = senderUser?.ProfilePicturePath ?? "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                CreatedAt = req.CreatedAt
+            });
+        }
+
+        var activeUser = _context.Users.FirstOrDefault(u => u.Username.ToLower() == currentUsername.ToLower());
+        ViewBag.ActiveUser = activeUser;
+        ViewBag.PendingRequests = requestListWithDetails;
+
+        return View();
+    }
+
+    // 4. Takip İsteğini Kabul Et veya Reddet
+    [HttpPost]
+    public IActionResult RespondFollowRequest(int requestId, string action) // action = "accept" veya "reject"
+    {
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        if (string.IsNullOrEmpty(currentUsername)) return Json(new { success = false });
+
+        var request = _context.FollowRequests.FirstOrDefault(fr => fr.Id == requestId && fr.ReceiverUsername.ToLower() == currentUsername.ToLower());
+        if (request == null) return Json(new { success = false });
+
+        if (action == "accept")
+        {
+            request.Status = "Accepted";
+
+            // Takip tablosuna ekle (Artık birbirlerini takip ediyorlar)
+            bool alreadyFollowing = _context.Follows.Any(f => f.FollowerUsername.ToLower() == request.SenderUsername.ToLower() && f.FollowingUsername.ToLower() == request.ReceiverUsername.ToLower());
+            if (!alreadyFollowing)
+            {
+                _context.NotificationModels.Add(new NotificationModel
+                {
+                    OwnerUsername = request.SenderUsername,
+                    SenderUsername = currentUsername,
+                    Type = "AcceptRequest",
+                    Content = $"{currentUsername} takip isteğini kabul etti.",
+                    CreatedAt = DateTime.Now
+                });
+            }
+        }
+        else if (action == "reject")
+        {
+            // Reddedilirse isteği tamamen silebiliriz
+            _context.FollowRequests.Remove(request);
+        }
+
+        _context.SaveChanges();
+        return Json(new { success = true });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateProfile(string bio, IFormFile? profilePicture, bool isPrivate)
+    {
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        if (string.IsNullOrEmpty(currentUsername)) return RedirectToAction("Login", "Account");
+
+        var user = _context.Users.FirstOrDefault(u => u.Username.ToLower() == currentUsername.ToLower());
+        if (user != null)
+        {
+            user.Bio = bio;
+            user.IsPrivate = isPrivate; // Gizlilik ayarı güncelleniyor
+
+            if (profilePicture != null && profilePicture.Length > 0)
+            {
+                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(profilePicture.FileName);
+                string uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles", fileName);
+
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/profiles"));
+
+                using (var stream = new FileStream(uploadPath, FileMode.Create))
+                {
+                    await profilePicture.CopyToAsync(stream);
+                }
+
+                user.ProfilePicturePath = "/uploads/profiles/" + fileName;
+            }
+
+            _context.SaveChanges();
+        }
+
+        return RedirectToAction("Profile", new { username = currentUsername });
+    }
+
+
+    [HttpGet]
+    public IActionResult GetFollowersList(string username)
+    {
+        var followerUsernames = _context.Follows
+            .Where(f => f.FollowingUsername.ToLower() == username.ToLower())
+            .Select(f => f.FollowerUsername)
+            .ToList();
+
+        var users = _context.Users
+            .Where(u => followerUsernames.Contains(u.Username))
+            .Select(u => new
+            {
+                username = u.Username,
+                profilePicture = !string.IsNullOrEmpty(u.ProfilePicturePath) ? u.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                bio = u.Bio ?? "Sosyal Medya Kullanıcısı"
+            })
+            .ToList();
+
+        return Json(users);
+    }
+
+    [HttpGet]
+    public IActionResult GetFollowingList(string username)
+    {
+        var followingUsernames = _context.Follows
+            .Where(f => f.FollowerUsername.ToLower() == username.ToLower())
+            .Select(f => f.FollowingUsername)
+            .ToList();
+
+        var users = _context.Users
+            .Where(u => followingUsernames.Contains(u.Username))
+            .Select(u => new
+            {
+                username = u.Username,
+                profilePicture = !string.IsNullOrEmpty(u.ProfilePicturePath) ? u.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+                bio = u.Bio ?? "Sosyal Medya Kullanıcısı"
+            })
+            .ToList();
+
+        return Json(users);
+    }
+
+    [HttpGet]
+    public IActionResult GetPostDetails(int postId)
+    {
+        string currentUsername = HttpContext.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+        if (string.IsNullOrEmpty(currentUsername)) return Content("Oturum bulunamadı.");
+
+        var post = _context.Posts
+            .Include(p => p.Comments)
+            .Include(p => p.Likes)
+            .FirstOrDefault(p => p.Id == postId);
+
+        if (post == null) return Content("Gönderi bulunamadı.");
+
+        var postOwner = _context.Users.FirstOrDefault(u => u.Username.ToLower() == post.Username.ToLower());
+        string ownerPic = (postOwner != null && !string.IsNullOrEmpty(postOwner.ProfilePicturePath)) ? postOwner.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+        bool isLikedByMe = post.Likes.Any(l => l.Username == currentUsername);
+
+        // Sol taraf medya, sağ taraf yorumlar/detaylar (Instagram Masaüstü Lightbox Tarzı)
+        string mediaHtml = "";
+        if (!string.IsNullOrEmpty(post.MediaUrl))
+        {
+            if (post.MediaType == "video")
+            {
+                mediaHtml = $"<video src='{post.MediaUrl}' controls autoplay muted loop style='width:100%; height:100%; object-fit:contain; background:#000;'></video>";
+            }
+            else
+            {
+                mediaHtml = $"<img src='{post.MediaUrl}' style='width:100%; height:100%; object-fit:contain; background:#000;' />";
+            }
+        }
+        else
+        {
+            mediaHtml = $"<div style='display:flex; align-items:center; justify-content:center; width:100%; height:100%; padding:20px; text-align:center; color:#fff;'>{post.Content}</div>";
+        }
+
+        string commentsHtml = "";
+        if (!post.Comments.Any())
+        {
+            commentsHtml = "<div style='color: #737373; font-size: 13px; text-align: center; margin-top: 40px;'>Henüz yorum yok.</div>";
+        }
+        else
+        {
+            foreach (var c in post.Comments)
+            {
+                commentsHtml += $@"
+                <div style='display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;'>
+                    <div style='display: flex; gap: 10px;'>
+                        <img src='{(string.IsNullOrEmpty(c.UserProfilePicture) ? "https://cdn-icons-png.flaticon.com/512/149/149071.png" : c.UserProfilePicture)}' style='width: 32px; height: 32px; border-radius: 50%; object-fit: cover;' />
+                        <div>
+                            <span style='font-weight: 600; font-size: 13px; color: #fff; margin-right: 6px;'>{c.Username}</span>
+                            <span style='font-size: 13px; color: #fff;'>{c.Content}</span>
+                        </div>
+                    </div>
+                </div>";
+            }
+        }
+
+        string htmlResult = $@"
+        <div style='display: flex; width: 100%; height: 600px; background: #000; color: #fff;'>
+            <!-- SOL TARAF: MEDYA -->
+            <div style='flex: 1.3; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-right: 1px solid #262626;'>
+                {mediaHtml}
+            </div>
+            <!-- SAĞ TARAF: BİLGİLER VE YORUMLAR -->
+            <div style='flex: 1; display: flex; flex-direction: column; background: #000;'>
+                <!-- Üst Bilgi -->
+                <div style='display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #262626;'>
+                    <img src='{ownerPic}' style='width: 36px; height: 36px; border-radius: 50%; object-fit: cover;' />
+                    <span style='font-weight: 600; font-size: 14px;'>{post.Username}</span>
+                </div>
+                <!-- Yorum Listesi -->
+                <div style='flex: 1; overflow-y: auto; padding: 16px;'>
+                    <div style='display: flex; gap: 10px; margin-bottom: 16px;'>
+                        <img src='{ownerPic}' style='width: 36px; height: 36px; border-radius: 50%; object-fit: cover;' />
+                        <div>
+                            <span style='font-weight: 600; font-size: 13px; margin-right: 6px;'>{post.Username}</span>
+                            <span style='font-size: 13px;'>{post.Content}</span>
+                        </div>
+                    </div>
+                    {commentsHtml}
+                </div>
+                <!-- Alt İşlemler ve Yorum Yazma -->
+                <div style='padding: 12px 16px; border-top: 1px solid #262626;'>
+                    <div style='display: flex; gap: 16px; font-size: 22px; margin-bottom: 10px;'>
+                        <i class='{(isLikedByMe ? "fa-solid fa-heart liked" : "fa-regular fa-heart")}'' style='cursor:pointer; color: {(isLikedByMe ? "#ed4956" : "#fff")}'></i>
+                        <i class='fa-regular fa-comment' style='cursor:pointer;'></i>
+                        <i class='fa-regular fa-paper-plane' style='cursor:pointer;'></i>
+                    </div>
+                    <div style='font-weight: 600; font-size: 13px; margin-bottom: 4px;'>{post.Likes.Count} beğeni</div>
+                </div>
+            </div>
+        </div>";
+
+        return Content(htmlResult, "text/html");
+    }
+
+
+
+    [HttpGet]
+    public IActionResult GetLiveKitToken(string roomName, string participantIdentity)
+    {
+        // LiveKit panelinden aldığın bilgiler
+        string apiKey = "APIPqXDPZgQhUE4";
+        string apiSecret = "wss://newproje-3yt8yezy.livekit.cloud";
+
+        // LiveKit Token Payload Yapısı
+        var header = new { alg = "HS256", typ = "JWT" };
+
+        long issuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long expiresAt = issuedAt + 3600; // 1 saat geçerli
+
+        var videoGrant = new Dictionary<string, object>
+    {
+        { "roomJoin", true },
+        { "room", roomName },
+        { "canPublish", true },
+        { "canSubscribe", true }
+    };
+
+        var payload = new Dictionary<string, object>
+    {
+        { "iss", apiKey },
+        { "sub", participantIdentity },
+        { "nbf", issuedAt },
+        { "exp", expiresAt },
+        { "video", videoGrant }
+    };
+
+        string token = EncodeJwt(header, payload, apiSecret);
+
+        return Json(new { token = token, wsUrl = "wss://newproje-3yt8yezy.livekit.cloud" });
+    }
+
+    // Güvenli JWT İmzalama Yardımcı Metodu
+    private string EncodeJwt(object header, object payload, string secret)
+    {
+        string stringHeader = JsonSerializer.Serialize(header);
+        string stringPayload = JsonSerializer.Serialize(payload);
+
+        string base64Header = Convert.ToBase64String(Encoding.UTF8.GetBytes(stringHeader)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        string base64Payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(stringPayload)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+        string unsignedJwt = $"{base64Header}.{base64Payload}";
+
+        byte[] keyBytes = Encoding.UTF8.GetBytes(secret);
+        byte[] messageBytes = Encoding.UTF8.GetBytes(unsignedJwt);
+
+        string base64Signature;
+        using (var hmac = new HMACSHA256(keyBytes))
+        {
+            byte[] hashMessage = hmac.ComputeHash(messageBytes);
+            base64Signature = Convert.ToBase64String(hashMessage).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        }
+
+        return $"{unsignedJwt}.{base64Signature}";
+    }
 }
 

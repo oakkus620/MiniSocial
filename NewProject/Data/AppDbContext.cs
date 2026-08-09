@@ -19,11 +19,24 @@ namespace NewProject.Data
         public DbSet<StoryInteraction> StoriesInteractions { get; set; }
         public DbSet<MessageModels> Messages { get; set; }
 
+        public DbSet<FollowRequest> FollowRequests { get; set; }
+
+        public DbSet<NotificationModel> NotificationModels { get; set; }
+
+
+       
+
+
         // SQL'deki tablo isimleriyle C# sınıflarını birebir eşcinselliyoruz / eşitliyoruz
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<LikeModel>().ToTable("LikeModel");
+            modelBuilder.Entity<CommentModel>().ToTable("CommentModel");
+
+
+            // Takip isteği ilişkileri için çakışma (cascade delete) hatasını önlemek adına:
             modelBuilder.Entity<LikeModel>().ToTable("LikeModel");
             modelBuilder.Entity<CommentModel>().ToTable("CommentModel");
         }

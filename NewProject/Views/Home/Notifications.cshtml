@@ -1,0 +1,109 @@
+﻿@{
+    ViewData["Title"] = "Bildirimler";
+    string currentUsername = Context.Session.GetString("GirisYapanKullanici") ?? string.Empty;
+
+    var pendingRequests = ViewBag.PendingRequests as List<dynamic> ?? new List<dynamic>();
+    bool hasUnread = ViewBag.HasUnreadNotifications != null && (bool)ViewBag.HasUnreadNotifications;
+}
+
+<div class="ig-layout">
+    <!-- Sol Menü -->
+    <nav class="ig-sidebar">
+        <div class="ig-logo-area"><i class="fa-solid fa-globe ig-logo-icon"></i></div>
+        <ul class="ig-nav-list">
+            <li><a href="/Home/Index" class="ig-nav-item"><i class="fa-solid fa-house"></i> <span class="ig-nav-label">Ana Sayfa</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-compass"></i> <span class="ig-nav-label">Keşfet</span></a></li>
+            <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-clapperboard"></i> <span class="ig-nav-label">Reels</span></a></li>
+            <li>
+                <a href="/Home/Notifications" class="ig-nav-item active" style="position: relative;">
+                    <i class="fa-solid fa-heart"></i> <span class="ig-nav-label">Bildirimler</span>
+                    @if (hasUnread)
+                    {
+                        <span style="position: absolute; top: 14px; left: 24px; width: 7px; height: 7px; background: #ed4956; border-radius: 50%;"></span>
+                    }
+                </a>
+            </li>
+            <li><a href="/Home/Profile/@currentUsername" class="ig-nav-item"><img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" class="ig-nav-avatar" /> <span class="ig-nav-label">Profil</span></a></li>
+        </ul>
+    </nav>
+
+    <!-- Ana Bildirim Alanı -->
+    <main style="flex: 1; margin-left: 244px; padding: 40px; max-width: 650px; color: #fff;">
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">Bildirimler</h2>
+
+        @if (pendingRequests.Count > 0)
+        {
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                @foreach (var req in pendingRequests)
+                {
+                    <div id="req-row-@req.RequestId" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #121212; border: 1px solid #262626; border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <img src="@req.SenderProfilePic" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" />
+                            <div>
+                                <a href="/Home/UserProfile/@req.SenderUsername" style="text-decoration: none; color: #fff; font-weight: 600; font-size: 14px;">@req.SenderUsername</a>
+                                <span id="req-text-@req.RequestId" style="display: block; font-size: 13px; color: #737373;">seni takip etmek istiyor.</span>
+                                <span style="font-size: 11px; color: #a8a8a8;">@(((DateTime)req.CreatedAt).ToString("HH:mm - dd MMM"))</span>
+                            </div>
+                        </div>
+                        <div id="req-actions-@req.RequestId" style="display: flex; gap: 8px;">
+                            <button onclick="acceptAndTransform(@req.RequestId, '@req.SenderUsername')" style="background: #0095f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer;">Onayla</button>
+                            <button onclick="respondRequest(@req.RequestId, 'reject')" style="background: #262626; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer;">Sil</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px 0; color: #737373;">
+                <i class="fa-regular fa-heart fa-3x" style="margin-bottom: 15px; display: block;"></i>
+                <p style="margin: 0; font-size: 14px;">Yeni bildiriminiz bulunmuyor.</p>
+            </div>
+        }
+    </main>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root { --ig-bg: #000; --ig-card-bg: #000; --ig-text: #fff; --ig-text-muted: #737373; --ig-border: #262626; --ig-primary: #0095f6; }
+    body { background-color: var(--ig-bg); color: var(--ig-text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; }
+    .ig-layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: 100vh; justify-content: center; }
+    .ig-sidebar { width: 244px; height: 100vh; position: fixed; top: 0; left: 0; border-right: 1px solid var(--ig-border); padding: 24px 12px; display: flex; flex-direction: column; justify-content: space-between; background: var(--ig-card-bg); z-index: 1000; box-sizing: border-box; }
+    .ig-logo-area { padding: 12px 4px 28px 8px; color: var(--ig-primary); font-size: 26px; }
+    .ig-nav-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+    .ig-nav-item { display: flex; align-items: center; gap: 16px; padding: 12px 10px; text-decoration: none; color: var(--ig-text); border-radius: 8px; font-size: 15px; }
+    .ig-nav-item:hover, .ig-nav-item.active { background-color: rgba(255, 255, 255, 0.05); font-weight: 600; }
+    .ig-nav-item i { font-size: 20px; width: 24px; text-align: center; }
+    .ig-nav-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function respondRequest(requestId, actionType) {
+        $.ajax({
+            url: '/Home/RespondFollowRequest',
+            type: 'POST',
+            data: { requestId: requestId, action: actionType },
+            success: function(response) {
+                if (response.success) { location.reload(); }
+                else { alert("İşlem başarısız."); }
+            }
+        });
+    }
+
+    function acceptAndTransform(requestId, senderUsername) {
+        $.ajax({
+            url: '/Home/RespondFollowRequest',
+            type: 'POST',
+            data: { requestId: requestId, action: 'accept' },
+            success: function (response) {
+                if (response.success) {
+                    document.getElementById(`req-text-${requestId}`).textContent = `${senderUsername} ile takipleştiniz.`;
+                    document.getElementById(`req-actions-${requestId}`).innerHTML = `<span style="background: #262626; color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">Takiptesin</span>`;
+                } else {
+                    alert("İşlem başarısız.");
+                }
+            }
+        });
+    }
+</script>

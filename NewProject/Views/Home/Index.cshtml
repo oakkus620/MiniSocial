@@ -10,26 +10,26 @@
 
 <!-- ARAMA MODALI -->
 <div id="searchModalOverlay" class="ig-search-overlay" onclick="closeSearchModalOnOutside(event)" style="display: none;">
-  <div class="ig-search-modal-box" onclick="event.stopPropagation()">
-    <div class="ig-search-modal-header">
-      <h3>Arama Yap</h3>
-      <button type="button" class="ig-search-close-btn" onclick="toggleSearchModal()">✕</button>
-    </div>
-    
-    <div class="search-bar-container">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" aria-hidden="true" role="img" viewBox="0 0 24 24" width="16" height="16">
-          <path fill="currentColor" d="M19 10.5A8.5 8.5 0 1 1 10.5 2a8.5 8.5 0 0 1 8.5 8.5Z" stroke="currentColor" stroke-width="2" fill="none"></path>
-          <line x1="16.511" y1="16.511" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
-        </svg>
-        <input type="text" id="searchInput" placeholder="Ara..." class="search-input" oninput="searchUsersAjax(this.value)" autocomplete="off" spellcheck="false">
-      </div>
-    </div>
+    <div class="ig-search-modal-box" onclick="event.stopPropagation()">
+        <div class="ig-search-modal-header">
+            <h3>Arama Yap</h3>
+            <button type="button" class="ig-search-close-btn" onclick="toggleSearchModal()">✕</button>
+        </div>
 
-    <div class="ig-search-modal-results" id="searchResultsContainer">
-      <div class="ig-search-placeholder">Aramak için bir şeyler yazın...</div>
+        <div class="search-bar-container">
+            <div class="search-input-wrapper">
+                <svg class="search-icon" aria-hidden="true" role="img" viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M19 10.5A8.5 8.5 0 1 1 10.5 2a8.5 8.5 0 0 1 8.5 8.5Z" stroke="currentColor" stroke-width="2" fill="none"></path>
+                    <line x1="16.511" y1="16.511" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Ara..." class="search-input" oninput="searchUsersAjax(this.value)" autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+
+        <div class="ig-search-modal-results" id="searchResultsContainer">
+            <div class="ig-search-placeholder">Aramak için bir şeyler yazın...</div>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- HİKAYE SEÇİM MODALI -->
@@ -113,7 +113,15 @@
                 </button>
             </li>
             <li><a href="#" class="ig-nav-item"><i class="fa-solid fa-clapperboard"></i> <span class="ig-nav-label">Reels</span></a></li>
-            <li><a href="#" class="ig-nav-item"><i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span></a></li>
+            <li>
+                <a href="/Home/Notifications" class="ig-nav-item" style="position: relative;">
+                    <i class="fa-regular fa-heart"></i> <span class="ig-nav-label">Bildirimler</span>
+                    @if (ViewBag.HasUnreadNotifications != null && (bool)ViewBag.HasUnreadNotifications)
+                    {
+                        <span style="position: absolute; top: 14px; left: 24px; width: 7px; height: 7px; background: #ed4956; border-radius: 50%;"></span>
+                    }
+                </a>
+            </li>
             <li><a href="/Home/Profile/@currentUsername" class="ig-nav-item"><img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" class="ig-nav-avatar" /> <span class="ig-nav-label">Profil</span></a></li>
         </ul>
         <div class="ig-sidebar-bottom">
@@ -142,19 +150,19 @@
                 string myRingClass = hasMyStory ? (isMyStoryAllSeen ? "seen-story" : "has-story") : "";
             }
 
-<div class="ig-story-item">
-    <div class="ig-story-ring-wrapper" style="position: relative; display: inline-block; width: 66px; height: 66px;">
-        <div class="ig-story-ring @myRingClass" id="ring-my-story" onclick="openUserStories('@currentUsername')" style="width: 66px; height: 66px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer;">
-            <div class="ig-story-avatar" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden;">
-                <img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" alt="Hikayen" style="width: 100%; height: 100%; object-fit: cover;" />
+            <div class="ig-story-item">
+                <div class="ig-story-ring-wrapper" style="position: relative; display: inline-block; width: 66px; height: 66px;">
+                    <div class="ig-story-ring @myRingClass" id="ring-my-story" onclick="openUserStories('@currentUsername')" style="width: 66px; height: 66px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer;">
+                        <div class="ig-story-avatar" style="width: 60px; height: 60px; border-radius: 50%; overflow: hidden;">
+                            <img src="@(ViewBag.ActiveUser != null && !string.IsNullOrEmpty(ViewBag.ActiveUser.ProfilePicturePath) ? ViewBag.ActiveUser.ProfilePicturePath : "https://cdn-icons-png.flaticon.com/512/149/149071.png")" alt="Hikayen" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div onclick="event.stopPropagation(); document.getElementById('storyCreateModal').style.display = 'flex';" title="Hikaye Ekle" style="position: absolute; bottom: -2px; right: -2px; background: #0095f6; color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #dbdbdb; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; z-index: 99;">
+                            <i class="fa-solid fa-plus"></i>
+                        </div>
+                    </div>
+                </div>
+                <span class="ig-story-name">Hikayen</span>
             </div>
-            <div onclick="event.stopPropagation(); document.getElementById('storyCreateModal').style.display = 'flex';" title="Hikaye Ekle" style="position: absolute; bottom: -2px; right: -2px; background: #0095f6; color: white; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #dbdbdb; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; cursor: pointer; z-index: 99;">
-                <i class="fa-solid fa-plus"></i>
-            </div>
-        </div>
-    </div>
-    <span class="ig-story-name">Hikayen</span>
-</div>
             @if (activeStoriesList != null)
             {
                 var otherStoriesGroup = activeStoriesList.Where(s => s.Username.ToLower() != currentUsername.ToLower()).GroupBy(s => s.Username);
@@ -275,44 +283,44 @@
                     </div>
                 }
 
-             <div id="comment-box-@post.Id" class="ig-comment-section" style="display: none;">
-    <div class="ig-comment-list">
-        @if (!post.Comments.Any())
-        {
-            <span class="ig-no-comment">Henüz yorum yok. İlk yorumu sen yaz!</span>
-        }
-        else
-        {
-            @foreach (var comment in post.Comments)
-            {
-                <div class="ig-comment-row" id="comment-row-@comment.Id">
-                    <div class="ig-comment-content-area" style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                        <img src="@(string.IsNullOrEmpty(comment.UserProfilePicture) ? "https://cdn-icons-png.flaticon.com/512/149/149071.png" : comment.UserProfilePicture)" alt="Avatar" class="ig-comment-avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />
-                        <div style="flex: 1; word-break: break-word;">
-                            <a href="/Home/Profile/@comment.Username" style="text-decoration:none;"><strong class="ig-comment-user">@comment.Username</strong></a>
-                            <span class="ig-comment-text">@comment.Content</span>
-                        </div>
+                <div id="comment-box-@post.Id" class="ig-comment-section" style="display: none;">
+                    <div class="ig-comment-list">
+                        @if (!post.Comments.Any())
+                        {
+                            <span class="ig-no-comment">Henüz yorum yok. İlk yorumu sen yaz!</span>
+                        }
+                        else
+                        {
+                            @foreach (var comment in post.Comments)
+                            {
+                                <div class="ig-comment-row" id="comment-row-@comment.Id">
+                                    <div class="ig-comment-content-area" style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                                        <img src="@(string.IsNullOrEmpty(comment.UserProfilePicture) ? "https://cdn-icons-png.flaticon.com/512/149/149071.png" : comment.UserProfilePicture)" alt="Avatar" class="ig-comment-avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />
+                                        <div style="flex: 1; word-break: break-word;">
+                                            <a href="/Home/Profile/@comment.Username" style="text-decoration:none;"><strong class="ig-comment-user">@comment.Username</strong></a>
+                                            <span class="ig-comment-text">@comment.Content</span>
+                                        </div>
+                                    </div>
+                                    @if (comment.Username == currentUsername)
+                                    {
+                                        <div style="position: relative;">
+                                            <button type="button" class="ig-comment-dots" onclick="toggleCommentMenu(event, '@comment.Id')"><span></span><span></span><span></span></button>
+                                            <div id="comment-menu-@comment.Id" class="ig-comment-popup-panel">
+                                                <button type="button" class="ig-panel-btn delete" onclick="deleteCommentAjax('@comment.Id')" style="width:100% !important; justify-content:center; background:none; border:none; cursor:pointer;">
+                                                    <i class="fa-solid fa-trash"></i> Sil
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
                     </div>
-                    @if (comment.Username == currentUsername)
-                    {
-                        <div style="position: relative;">
-                            <button type="button" class="ig-comment-dots" onclick="toggleCommentMenu(event, '@comment.Id')"><span></span><span></span><span></span></button>
-                            <div id="comment-menu-@comment.Id" class="ig-comment-popup-panel">
-                                <button type="button" class="ig-panel-btn delete" onclick="deleteCommentAjax('@comment.Id')" style="width:100% !important; justify-content:center; background:none; border:none; cursor:pointer;">
-                                    <i class="fa-solid fa-trash"></i> Sil
-                                </button>
-                            </div>
-                        </div>
-                    }
+                    <form onsubmit="submitCommentAjax(event, '@post.Id')" class="ig-comment-form">
+                        <input type="text" id="comment-input-@post.Id" class="ig-comment-input" placeholder="Yorum ekle..." autocomplete="off" spellcheck="false" required />
+                        <button type="submit" class="ig-comment-submit">Paylaş</button>
+                    </form>
                 </div>
-            }
-        }
-    </div>
-    <form onsubmit="submitCommentAjax(event, '@post.Id')" class="ig-comment-form">
-        <input type="text" id="comment-input-@post.Id" class="ig-comment-input" placeholder="Yorum ekle..." autocomplete="off" spellcheck="false" required />
-        <button type="submit" class="ig-comment-submit">Paylaş</button>
-    </form>
-</div>
             </div>
         }
     </main>
@@ -544,11 +552,11 @@
         border-right: 1px solid var(--ig-border);
     }
 
-    .ig-edit-media-preview img, .ig-edit-media-preview video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
+        .ig-edit-media-preview img, .ig-edit-media-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
     .ig-edit-content-area {
         flex: 1;
@@ -565,18 +573,18 @@
         margin-bottom: 14px;
     }
 
-    .ig-edit-user-info img {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
+        .ig-edit-user-info img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
 
-    .ig-edit-user-info span {
-        font-weight: 600;
-        font-size: 14px;
-        color: var(--ig-text);
-    }
+        .ig-edit-user-info span {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--ig-text);
+        }
 
     .ig-edit-textarea {
         flex: 1;
@@ -602,7 +610,6 @@
         background: rgba(0,0,0,0.95) !important;
     }
 
-    /* ARAMA MODALI */
     .ig-search-overlay {
         background: rgba(0,0,0,0.6) !important;
         backdrop-filter: blur(3px);
@@ -632,12 +639,12 @@
         margin-bottom: 12px;
     }
 
-    .ig-search-modal-header h3 {
-        font-size: 15px;
-        font-weight: 600;
-        margin: 0;
-        color: var(--ig-text) !important;
-    }
+        .ig-search-modal-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0;
+            color: var(--ig-text) !important;
+        }
 
     .ig-search-close-btn {
         background: none;
@@ -663,24 +670,24 @@
         border: 1px solid var(--ig-border);
     }
 
-    .search-input-wrapper .search-icon {
-        color: var(--ig-text-muted);
-        margin-right: 10px;
-        flex-shrink: 0;
-    }
+        .search-input-wrapper .search-icon {
+            color: var(--ig-text-muted);
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
 
-    .search-input-wrapper .search-input {
-        border: none;
-        background: transparent;
-        outline: none;
-        font-size: 14px;
-        color: var(--ig-text);
-        width: 100%;
-    }
+        .search-input-wrapper .search-input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 14px;
+            color: var(--ig-text);
+            width: 100%;
+        }
 
-    .search-input-wrapper .search-input::placeholder {
-        color: var(--ig-text-muted);
-    }
+            .search-input-wrapper .search-input::placeholder {
+                color: var(--ig-text-muted);
+            }
 
     .ig-search-modal-results {
         flex: 1;
@@ -710,9 +717,9 @@
         color: var(--ig-text) !important;
     }
 
-    .ig-search-result-item:hover {
-        background: var(--ig-hover);
-    }
+        .ig-search-result-item:hover {
+            background: var(--ig-hover);
+        }
 
     .ig-search-user-info {
         display: flex;
@@ -756,12 +763,12 @@
         border-bottom: 1px solid #363636;
     }
 
-    .ig-story-create-header h3 {
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-        color: #fff;
-    }
+        .ig-story-create-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+            color: #fff;
+        }
 
     .ig-sidebar {
         width: 72px;
@@ -781,9 +788,9 @@
         overflow: hidden;
     }
 
-    .ig-sidebar:hover {
-        width: 244px;
-    }
+        .ig-sidebar:hover {
+            width: 244px;
+        }
 
     .ig-logo-area {
         display: flex;
@@ -823,18 +830,18 @@
         background: transparent !important;
     }
 
-    .ig-nav-item i, .ig-bottom-item i {
-        font-size: 20px !important;
-        width: 24px;
-        text-align: center;
-        display: inline-block;
-        flex-shrink: 0;
-    }
+        .ig-nav-item i, .ig-bottom-item i {
+            font-size: 20px !important;
+            width: 24px;
+            text-align: center;
+            display: inline-block;
+            flex-shrink: 0;
+        }
 
-    .ig-nav-item:hover, .ig-nav-item.active {
-        background-color: var(--ig-hover) !important;
-        font-weight: 600;
-    }
+        .ig-nav-item:hover, .ig-nav-item.active {
+            background-color: var(--ig-hover) !important;
+            font-weight: 600;
+        }
 
     .ig-nav-avatar {
         width: 24px !important;
@@ -867,9 +874,9 @@
         text-align: left;
     }
 
-    .ig-bottom-item:hover {
-        background-color: var(--ig-hover) !important;
-    }
+        .ig-bottom-item:hover {
+            background-color: var(--ig-hover) !important;
+        }
 
     .ig-feed {
         flex: 1;
@@ -897,9 +904,9 @@
         box-sizing: border-box;
     }
 
-    .ig-stories-box::-webkit-scrollbar {
-        display: none;
-    }
+        .ig-stories-box::-webkit-scrollbar {
+            display: none;
+        }
 
     .ig-story-item {
         display: flex;
@@ -910,13 +917,12 @@
         flex-shrink: 0;
     }
 
-   .ig-story-ring-wrapper {
-    position: relative !important;
-    width: 66px !important;
-    height: 66px !important;
-    display: inline-block !important;
-}
-
+    .ig-story-ring-wrapper {
+        position: relative !important;
+        width: 66px !important;
+        height: 66px !important;
+        display: inline-block !important;
+    }
 
     .ig-story-ring {
         width: 66px !important;
@@ -928,15 +934,15 @@
         position: relative !important;
     }
 
-    .ig-story-ring.has-story {
-        background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-        padding: 2px;
-    }
+        .ig-story-ring.has-story {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            padding: 2px;
+        }
 
-    .ig-story-ring.seen-story {
-        background: #dbdbdb !important;
-        padding: 2px;
-    }
+        .ig-story-ring.seen-story {
+            background: #dbdbdb !important;
+            padding: 2px;
+        }
 
     .ig-story-avatar {
         width: 60px;
@@ -947,11 +953,11 @@
         overflow: hidden;
     }
 
-    .ig-story-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .ig-story-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .ig-story-name {
         font-size: 12px;
@@ -962,25 +968,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
-  .ig-story-add-badge {
-    position: absolute !important;
-    bottom: 0px !important;
-    right: 0px !important;
-    background: #0095f6 !important;
-    color: white !important;
-    width: 20px !important;
-    height: 20px !important;
-    border-radius: 50% !important;
-    border: 2px solid var(--ig-card-bg, #000) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 10px !important;
-    font-weight: bold !important;
-    z-index: 50 !important;
-    cursor: pointer !important;
-}
 
     .ig-create-card {
         width: 100%;
@@ -1046,17 +1033,17 @@
         transition: max-height 0.4s ease, padding 0.4s ease;
     }
 
-    .ig-preview-box.active {
-        max-height: 300px;
-        padding: 8px;
-    }
+        .ig-preview-box.active {
+            max-height: 300px;
+            padding: 8px;
+        }
 
-    .ig-preview-box img, .ig-preview-box video {
-        max-width: 100%;
-        max-height: 240px;
-        border-radius: 6px;
-        object-fit: contain;
-    }
+        .ig-preview-box img, .ig-preview-box video {
+            max-width: 100%;
+            max-height: 240px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
 
     .ig-remove-media-btn {
         position: absolute;
@@ -1106,11 +1093,11 @@
         background: #262626;
     }
 
-    .ig-post-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .ig-post-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .ig-post-username {
         font-size: 14px;
@@ -1132,12 +1119,12 @@
         padding: 6px;
     }
 
-    .ig-dots-btn span {
-        width: 3px;
-        height: 3px;
-        background: var(--ig-text);
-        border-radius: 50%;
-    }
+        .ig-dots-btn span {
+            width: 3px;
+            height: 3px;
+            background: var(--ig-text);
+            border-radius: 50%;
+        }
 
     .ig-dropdown-wrapper {
         position: relative;
@@ -1171,17 +1158,17 @@
         cursor: pointer;
     }
 
-    .ig-dropdown-item.edit {
-        color: var(--ig-primary);
-    }
+        .ig-dropdown-item.edit {
+            color: var(--ig-primary);
+        }
 
-    .ig-dropdown-item.delete {
-        color: #ed4956;
-    }
+        .ig-dropdown-item.delete {
+            color: #ed4956;
+        }
 
-    .ig-dropdown-item:hover {
-        background: var(--ig-hover);
-    }
+        .ig-dropdown-item:hover {
+            background: var(--ig-hover);
+        }
 
     .ig-post-media {
         width: 100%;
@@ -1193,12 +1180,12 @@
         overflow: hidden;
     }
 
-    .ig-post-media img, .ig-post-media video {
-        width: 100%;
-        max-height: 640px;
-        object-fit: contain;
-        display: block;
-    }
+        .ig-post-media img, .ig-post-media video {
+            width: 100%;
+            max-height: 640px;
+            object-fit: contain;
+            display: block;
+        }
 
     .ig-post-actions-bar {
         display: flex;
@@ -1222,9 +1209,9 @@
         padding: 0;
     }
 
-    .ig-action-icon-btn i.liked {
-        color: #ed4956;
-    }
+        .ig-action-icon-btn i.liked {
+            color: #ed4956;
+        }
 
     .ig-action-count {
         font-size: 14px;
@@ -1311,12 +1298,12 @@
         padding: 4px;
     }
 
-    .ig-comment-dots span {
-        width: 2.5px;
-        height: 2.5px;
-        background: var(--ig-text);
-        border-radius: 50%;
-    }
+        .ig-comment-dots span {
+            width: 2.5px;
+            height: 2.5px;
+            background: var(--ig-text);
+            border-radius: 50%;
+        }
 
     .ig-comment-popup-panel {
         display: none;
@@ -1341,11 +1328,11 @@
         font-size: 12px !important;
     }
 
-    .ig-panel-btn.delete {
-        color: #ed4956 !important;
-        text-decoration: none !important;
-        font-weight: 600;
-    }
+        .ig-panel-btn.delete {
+            color: #ed4956 !important;
+            text-decoration: none !important;
+            font-weight: 600;
+        }
 
     .ig-comment-form {
         display: flex;
@@ -1407,11 +1394,11 @@
         flex-shrink: 0;
     }
 
-    .ig-profile-avatar-lg img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+        .ig-profile-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
     .ig-profile-info {
         flex: 1;
@@ -1464,10 +1451,10 @@
         line-height: 1.6;
     }
 
-    .ig-footer-links a {
-        color: var(--ig-text-muted);
-        text-decoration: none;
-    }
+        .ig-footer-links a {
+            color: var(--ig-text-muted);
+            text-decoration: none;
+        }
 
     .ig-meta-copyright {
         margin-top: 16px;
@@ -1574,12 +1561,12 @@
         padding: 5px;
     }
 
-    .ig-story-dots-btn span {
-        width: 4px;
-        height: 4px;
-        background: white;
-        border-radius: 50%;
-    }
+        .ig-story-dots-btn span {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+        }
 
     .ig-story-menu-wrapper {
         position: relative;
@@ -1608,9 +1595,9 @@
         text-align: left;
     }
 
-    .ig-story-delete-item:hover {
-        background: rgba(255,255,255,0.05);
-    }
+        .ig-story-delete-item:hover {
+            background: rgba(255,255,255,0.05);
+        }
 
     .ig-story-viewer-container {
         position: relative;
@@ -1645,12 +1632,12 @@
         cursor: default !important;
     }
 
-    .ig-story-media-box img, .ig-story-media-box video {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        cursor: default !important;
-    }
+        .ig-story-media-box img, .ig-story-media-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: default !important;
+        }
 
     .ig-story-footer-actions {
         position: absolute;
@@ -1663,20 +1650,20 @@
         z-index: 10;
     }
 
-    .ig-story-footer-actions input {
-        flex: 1;
-        background: transparent;
-        border: 1px solid rgba(255,255,255,0.4);
-        border-radius: 20px;
-        padding: 10px 16px;
-        color: white;
-        outline: none;
-        font-size: 13px;
-    }
+        .ig-story-footer-actions input {
+            flex: 1;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: white;
+            outline: none;
+            font-size: 13px;
+        }
 
-    .ig-story-footer-actions input::placeholder {
-        color: rgba(255,255,255,0.6);
-    }
+            .ig-story-footer-actions input::placeholder {
+                color: rgba(255,255,255,0.6);
+            }
 
     .ig-story-like-btn, .ig-story-send-btn {
         background: none;
@@ -1687,9 +1674,9 @@
         padding: 4px;
     }
 
-    .ig-story-like-btn i.liked {
-        color: #ed4956;
-    }
+        .ig-story-like-btn i.liked {
+            color: #ed4956;
+        }
 
     .ig-logout-modal-overlay {
         position: fixed;
@@ -1720,18 +1707,18 @@
         border-bottom: 1px solid var(--ig-border);
     }
 
-    .ig-logout-modal-header h3 {
-        margin: 0 0 8px 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: var(--ig-text);
-    }
+        .ig-logout-modal-header h3 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ig-text);
+        }
 
-    .ig-logout-modal-header p {
-        margin: 0;
-        font-size: 13px;
-        color: var(--ig-text-muted);
-    }
+        .ig-logout-modal-header p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--ig-text-muted);
+        }
 
     .ig-logout-modal-actions {
         display: flex;
@@ -1750,9 +1737,9 @@
         cursor: pointer;
     }
 
-    .ig-logout-confirm-btn:hover {
-        background: rgba(237, 73, 86, 0.1);
-    }
+        .ig-logout-confirm-btn:hover {
+            background: rgba(237, 73, 86, 0.1);
+        }
 
     .ig-logout-cancel-btn {
         padding: 14px;
@@ -1763,9 +1750,9 @@
         cursor: pointer;
     }
 
-    .ig-logout-cancel-btn:hover {
-        background: var(--ig-hover);
-    }
+        .ig-logout-cancel-btn:hover {
+            background: var(--ig-hover);
+        }
 
     body.light-theme {
         --ig-bg: #fafafa;
@@ -1808,12 +1795,12 @@
         gap: 8px;
     }
 
-    .ig-msg-popup-title-area h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--ig-text) !important;
-    }
+        .ig-msg-popup-title-area h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ig-text) !important;
+        }
 
     .ig-msg-badge {
         background: #ff3b30;
@@ -1843,9 +1830,9 @@
         padding: 4px;
     }
 
-    .ig-msg-control-btn:hover {
-        color: var(--ig-primary);
-    }
+        .ig-msg-control-btn:hover {
+            color: var(--ig-primary);
+        }
 
     .ig-msg-search-box {
         padding: 10px 16px;
@@ -1863,24 +1850,24 @@
         position: relative;
     }
 
-    .ig-search-input-wrapper i.fa-magnifying-glass {
-        color: var(--ig-text-muted);
-        font-size: 14px;
-    }
+        .ig-search-input-wrapper i.fa-magnifying-glass {
+            color: var(--ig-text-muted);
+            font-size: 14px;
+        }
 
-    .ig-search-input-wrapper input {
-        background: none !important;
-        border: none;
-        outline: none;
-        color: var(--ig-text) !important;
-        font-size: 13px;
-        width: 100%;
-        padding-right: 24px;
-    }
+        .ig-search-input-wrapper input {
+            background: none !important;
+            border: none;
+            outline: none;
+            color: var(--ig-text) !important;
+            font-size: 13px;
+            width: 100%;
+            padding-right: 24px;
+        }
 
-    .ig-search-input-wrapper input::placeholder {
-        color: var(--ig-text-muted) !important;
-    }
+            .ig-search-input-wrapper input::placeholder {
+                color: var(--ig-text-muted) !important;
+            }
 
     .ig-search-clear-btn {
         position: absolute;
@@ -1901,15 +1888,15 @@
         transition: opacity 0.2s ease, visibility 0.2s ease, background-color 0.2s ease, color 0.2s ease;
     }
 
-    .ig-search-clear-btn.visible {
-        opacity: 1;
-        visibility: visible;
-    }
+        .ig-search-clear-btn.visible {
+            opacity: 1;
+            visibility: visible;
+        }
 
-    .ig-search-clear-btn:hover {
-        background: rgba(128, 128, 128, 0.25);
-        color: var(--ig-text);
-    }
+        .ig-search-clear-btn:hover {
+            background: rgba(128, 128, 128, 0.25);
+            color: var(--ig-text);
+        }
 
     .ig-msg-popup-body {
         flex: 1;
@@ -1950,9 +1937,9 @@
         background: var(--ig-card-bg) !important;
     }
 
-    .ig-chat-row:hover {
-        background: var(--ig-hover) !important;
-    }
+        .ig-chat-row:hover {
+            background: var(--ig-hover) !important;
+        }
 
     .ig-chat-user-info {
         display: flex;
@@ -2061,24 +2048,21 @@
         cursor: pointer;
     }
 
-    .ig-chat-menu-item.delete {
-        color: #ed4956 !important;
-    }
+        .ig-chat-menu-item.delete {
+            color: #ed4956 !important;
+        }
 
-    .ig-chat-menu-item:hover {
-        background: var(--ig-hover) !important;
-    }
+        .ig-chat-menu-item:hover {
+            background: var(--ig-hover) !important;
+        }
 
     .ig-inner-chat-messages {
-        flex: 1;
-        padding: 16px;
-        overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        background: var(--ig-card-bg) !important;
+        gap: 8px;
+        padding: 16px;
+        overflow-y: auto;
     }
-
     .ig-bubble {
         max-width: 70%;
         padding: 10px 14px 20px 14px;
@@ -2089,19 +2073,19 @@
         position: relative;
     }
 
-    .ig-bubble.incoming {
-        background: var(--ig-input-bg);
-        color: var(--ig-text);
-        align-self: flex-start;
-        border-bottom-left-radius: 4px;
-    }
+        .ig-bubble.incoming {
+            background: var(--ig-input-bg);
+            color: var(--ig-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
 
-    .ig-bubble.outgoing {
-        background: #0095f6;
-        color: white;
-        align-self: flex-end;
-        border-bottom-right-radius: 4px;
-    }
+        .ig-bubble.outgoing {
+            background: #0095f6;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
 
     .ig-msg-time {
         position: absolute;
@@ -2167,9 +2151,9 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
 
-    .ig-msg-new-btn:hover {
-        color: var(--ig-primary);
-    }
+        .ig-msg-new-btn:hover {
+            color: var(--ig-primary);
+        }
 
     .ig-sidebar-badge {
         position: absolute;
@@ -2192,9 +2176,9 @@
         cursor: pointer;
     }
 
-    .ig-active-chat-header-user:hover h3 {
-        opacity: 0.8;
-    }
+        .ig-active-chat-header-user:hover h3 {
+            opacity: 0.8;
+        }
 
     .ig-active-header-avatar {
         width: 32px;
@@ -2223,24 +2207,22 @@
     .ig-msg-bubble-wrapper {
         display: flex;
         flex-direction: column;
-        position: relative !important;
-        margin-bottom: 8px;
         width: 100%;
     }
 
-    .ig-msg-bubble-wrapper.outgoing-wrap {
-        align-items: flex-end;
-    }
+        .ig-msg-bubble-wrapper.outgoing-wrap {
+            align-items: flex-end;
+        }
 
-    .ig-msg-bubble-wrapper.incoming-wrap {
-        align-items: flex-start;
-    }
+        .ig-msg-bubble-wrapper.incoming-wrap {
+            align-items: flex-start;
+        }
 
     .ig-bubble-row-inner {
         display: flex;
-        align-items: center;
-        gap: 6px;
-        position: relative;
+        align-items: flex-end;
+        gap: 8px;
+        max-width: 75%;
     }
 
     .ig-msg-bubble-wrapper.outgoing-wrap .ig-bubble-row-inner {
@@ -2302,13 +2284,13 @@
         cursor: pointer;
     }
 
-    .ig-msg-action-item.delete {
-        color: #ed4956;
-    }
+        .ig-msg-action-item.delete {
+            color: #ed4956;
+        }
 
-    .ig-msg-action-item:hover {
-        background: var(--ig-hover);
-    }
+        .ig-msg-action-item:hover {
+            background: var(--ig-hover);
+        }
 
     @@media screen and (max-width: 768px) {
         html, body {
@@ -2365,14 +2347,6 @@
             height: 42px !important;
         }
 
-        .ig-story-add-badge {
-            bottom: 0px !important;
-            right: 0px !important;
-            width: 16px !important;
-            height: 16px !important;
-            font-size: 9px !important;
-        }
-
         .ig-create-card,
         .ig-post-card {
             width: 92% !important;
@@ -2382,14 +2356,6 @@
             border: 1px solid var(--ig-border) !important;
             box-sizing: border-box !important;
             background-color: var(--ig-card-bg, #000) !important;
-        }
-
-        .ig-create-card {
-            padding: 12px !important;
-        }
-
-        .ig-post-card {
-            overflow: hidden !important;
         }
 
         .ig-sidebar {
@@ -2414,16 +2380,16 @@
             overflow: visible !important;
         }
 
-        .ig-sidebar:hover {
-            width: 100vw !important;
-        }
+            .ig-sidebar:hover {
+                width: 100vw !important;
+            }
 
-        .ig-sidebar span, 
-        .ig-logo-area, 
-        .ig-sidebar-bottom, 
-        .ig-nav-label {
-            display: none !important;
-        }
+            .ig-sidebar span,
+            .ig-logo-area,
+            .ig-sidebar-bottom,
+            .ig-nav-label {
+                display: none !important;
+            }
 
         .ig-nav-list {
             display: flex !important;
@@ -2445,18 +2411,6 @@
             color: var(--ig-text) !important;
         }
 
-        .ig-story-viewer-modal {
-            z-index: 999999999 !important;
-        }
-
-        .ig-search-modal-box {
-            width: 90vw !important;
-            max-width: 400px !important;
-            height: 440px !important;
-            background: var(--ig-card-bg) !important;
-            margin: auto !important;
-        }
-
         .ig-msg-popup-container {
             position: fixed !important;
             top: 0 !important;
@@ -2472,20 +2426,6 @@
             z-index: 9999999 !important;
             background: var(--ig-card-bg) !important;
             box-shadow: none !important;
-        }
-
-        .ig-msg-popup-header {
-            background: var(--ig-card-bg) !important;
-        }
-
-        .ig-msg-search-box {
-            padding: 10px 16px !important;
-            background: var(--ig-card-bg) !important;
-        }
-
-        .ig-search-input-wrapper {
-            margin-right: 12px !important;
-            background: var(--ig-input-bg) !important;
         }
 
         .mobile-hide-control {
@@ -2917,17 +2857,17 @@
         const body = document.body;
         const themeIcon = document.getElementById('themeIcon');
         const themeText = document.getElementById('themeText');
-        
+
         rootElement.classList.toggle('light-theme');
         body.classList.toggle('light-theme');
 
         if (rootElement.classList.contains('light-theme')) {
             localStorage.setItem('ig_theme', 'light');
-            themeIcon.className = "fa-solid fa-sun"; 
+            themeIcon.className = "fa-solid fa-sun";
             themeText.textContent = "Tema: Açık";
         } else {
             localStorage.setItem('ig_theme', 'dark');
-            themeIcon.className = "fa-solid fa-moon"; 
+            themeIcon.className = "fa-solid fa-moon";
             themeText.textContent = "Tema: Koyu";
         }
     }
@@ -2966,10 +2906,10 @@
                         container.innerHTML = `<div class="ig-search-no-result">Aradığınız kritere uygun sohbet bulunamadı.</div>`;
                     } else {
                         container.innerHTML = `
-                            <div class="ig-msg-empty-box">
-                                <div class="ig-empty-plane-icon-sm"><i class="fa-regular fa-paper-plane"></i></div>
-                                <p>Henüz mesaj oluşturulmadı.<br>İlk mesajını oluşturmak için sağ alttaki kaleme tıkla!</p>
-                            </div>`;
+                                <div class="ig-msg-empty-box">
+                                    <div class="ig-empty-plane-icon-sm"><i class="fa-regular fa-paper-plane"></i></div>
+                                    <p>Henüz mesaj oluşturulmadı.<br>İlk mesajını oluşturmak için sağ alttaki kaleme tıkla!</p>
+                                </div>`;
                     }
                     return;
                 }
@@ -2989,26 +2929,26 @@
                     let muteActionType = conv.isMuted ? "unmute" : "mute";
 
                     html += `
-                        <div class="ig-chat-row ${conv.isRead || conv.hasDraft ? '' : 'unread'}" onclick="openChatWithUser('${conv.username}', '${conv.profilePicture}')">
-                            <div class="ig-chat-user-info">
-                                <img src="${conv.profilePicture}" class="ig-chat-avatar" />
-                                <div class="ig-chat-details">
-                                    <span class="ig-chat-name">${conv.username}</span>
-                                    <span class="ig-chat-preview">${previewText}</span>
+                            <div class="ig-chat-row ${conv.isRead || conv.hasDraft ? '' : 'unread'}" onclick="openChatWithUser('${conv.username}', '${conv.profilePicture}')">
+                                <div class="ig-chat-user-info">
+                                    <img src="${conv.profilePicture}" class="ig-chat-avatar" />
+                                    <div class="ig-chat-details">
+                                        <span class="ig-chat-name">${conv.username}</span>
+                                        <span class="ig-chat-preview">${previewText}</span>
+                                    </div>
                                 </div>
-                            </div>
-                            ${!conv.isRead && !conv.hasDraft ? '<div class="ig-unread-dot"></div>' : ''}
-                            <div class="ig-chat-options-wrapper" onclick="event.stopPropagation()">
-                                <button type="button" class="ig-chat-dots-btn" onclick="toggleChatMenu(event, '${conv.username}')">
-                                    <i class="fa-solid fa-ellipsis"></i>
-                                </button>
-                                <div id="chat-menu-${conv.username}" class="ig-chat-popup-menu">
-                                    <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', 'read')">Görüldü olarak işaretle</button>
-                                    <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', '${muteActionType}')">${muteUnmuteText}</button>
-                                    <button type="button" class="ig-chat-menu-item delete" onclick="updateMessageAction('${conv.username}', 'delete')">Sil</button>
+                                ${!conv.isRead && !conv.hasDraft ? '<div class="ig-unread-dot"></div>' : ''}
+                                <div class="ig-chat-options-wrapper" onclick="event.stopPropagation()">
+                                    <button type="button" class="ig-chat-dots-btn" onclick="toggleChatMenu(event, '${conv.username}')">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                    <div id="chat-menu-${conv.username}" class="ig-chat-popup-menu">
+                                        <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', 'read')">Görüldü olarak işaretle</button>
+                                        <button type="button" class="ig-chat-menu-item" onclick="updateMessageAction('${conv.username}', '${muteActionType}')">${muteUnmuteText}</button>
+                                        <button type="button" class="ig-chat-menu-item delete" onclick="updateMessageAction('${conv.username}', 'delete')">Sil</button>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>`;
+                            </div>`;
                 });
                 container.innerHTML = html;
             });
@@ -3050,15 +2990,15 @@
                     let html = '';
                     users.forEach(u => {
                         html += `
-                            <div class="ig-chat-row" onclick="openChatWithUser('${u.username}', '${u.profilePicture}')">
-                                <div class="ig-chat-user-info">
-                                    <img src="${u.profilePicture}" class="ig-chat-avatar" />
-                                    <div class="ig-chat-details">
-                                        <span class="ig-chat-name">${u.username}</span>
-                                        <span class="ig-chat-preview">${u.bio || ''}</span>
+                                <div class="ig-chat-row" onclick="openChatWithUser('${u.username}', '${u.profilePicture}')">
+                                    <div class="ig-chat-user-info">
+                                        <img src="${u.profilePicture}" class="ig-chat-avatar" />
+                                        <div class="ig-chat-details">
+                                            <span class="ig-chat-name">${u.username}</span>
+                                            <span class="ig-chat-preview">${u.bio || ''}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>`;
+                                </div>`;
                     });
                     container.innerHTML = html;
                 });
@@ -3092,15 +3032,30 @@
     function backToMessageList() {
         currentActiveChatUser = null;
         currentActiveProfilePic = "";
-        document.getElementById('popupTitleArea').innerHTML = '<h3 id="popupTitle">Mesajlar</h3> <span class="ig-msg-badge" id="totalUnreadBadge" style="display:none;">0</span>';
-        document.getElementById('chatBackBtn').style.display = 'none';
-        document.getElementById('igMsgFooter').style.display = 'flex';
 
-        document.getElementById('msgSearchBoxContainer').style.display = 'block';
+        document.getElementById('popupTitleArea').innerHTML = '<h3 id="popupTitle">Mesajlar</h3> <span class="ig-msg-badge" id="totalUnreadBadge" style="display:none;">0</span>';
+
+        const controlsArea = document.querySelector('.ig-msg-popup-controls');
+        if (controlsArea) {
+            controlsArea.innerHTML = `
+                    <a href="/Home/Messages" class="ig-msg-control-btn mobile-hide-control" title="Tam Ekrana Geç">
+                        <i class="fa-solid fa-expand"></i>
+                    </a>
+                    <button type="button" class="ig-msg-control-btn mobile-hide-control" onclick="toggleMessagePopup()" title="Kapat">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>`;
+        }
+
+        const footer = document.getElementById('igMsgFooter');
+        const searchBox = document.getElementById('msgSearchBoxContainer');
+        if (footer) footer.style.display = 'flex';
+        if (searchBox) searchBox.style.display = 'block';
+
         const searchInput = document.getElementById('msgSearchInput');
-        searchInput.value = '';
-        searchInput.placeholder = "Ara...";
-        document.getElementById('msgSearchClearBtn').classList.remove('visible');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.placeholder = "Ara...";
+        }
 
         loadConversations();
     }
@@ -3112,15 +3067,32 @@
         const titleArea = document.getElementById('popupTitleArea');
         if (titleArea) {
             titleArea.innerHTML = `
-                <a href="/Home/Profile/${encodeURIComponent(username)}" class="ig-active-chat-header-user">
-                    <img src="${profilePic}" class="ig-active-header-avatar" />
-                    <h3 id="popupTitle" style="margin:0; font-size:16px; font-weight:700; color:var(--ig-text);">${username}</h3>
-                </a>`;
+                    <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                        <button type="button" id="popupMobileBack" class="ig-msg-control-btn" onclick="backToMessageList()" style="display: flex; background: none; border: none; color: var(--ig-text); font-size: 16px; cursor: pointer; padding: 0;" title="Geri">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <a href="/Home/Profile/${encodeURIComponent(username)}" class="ig-active-chat-header-user" style="display: flex; align-items: center; gap: 8px; text-decoration: none;">
+                            <img src="${profilePic}" class="ig-active-header-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                            <h3 id="popupTitle" style="margin:0; font-size:15px; font-weight:700; color:var(--ig-text);">${username}</h3>
+                        </a>
+                    </div>`;
         }
 
-        document.getElementById('chatBackBtn').style.display = 'flex';
-        document.getElementById('igMsgFooter').style.display = 'none';
-        document.getElementById('msgSearchBoxContainer').style.display = 'none';
+        const controlsArea = document.querySelector('.ig-msg-popup-controls');
+        if (controlsArea) {
+            controlsArea.innerHTML = `
+                    <div style="display: flex; gap: 14px; color: var(--ig-text); font-size: 16px; cursor: pointer; align-items: center; margin-right: 4px;">
+                        <i class="fa-solid fa-phone" onclick="startPopupLiveCall('audio', '${username}')" title="Sesli Ara"></i>
+                        <i class="fa-solid fa-video" onclick="startPopupLiveCall('video', '${username}')" title="Görüntülü Ara"></i>
+                        <i class="fa-solid fa-circle-info" onclick="alert('${username} ile olan sohbet bilgileri.')" title="Hakkında"></i>
+                    </div>`;
+        }
+
+        // Kesin olarak arama çubuğunu ve footer'ı gizleyelim ki liste altta görünmesin
+        const searchBox = document.getElementById('msgSearchBoxContainer');
+        const footer = document.getElementById('igMsgFooter');
+        if (searchBox) searchBox.style.display = 'none';
+        if (footer) footer.style.display = 'none';
 
         fetch('/Home/MarkConversationAsRead?partnerUsername=' + encodeURIComponent(username), {
             method: 'POST'
@@ -3130,57 +3102,93 @@
             .then(res => res.json())
             .then(data => {
                 const container = document.getElementById('igMsgPopupContentArea');
+                if (!container) return;
+
                 let messagesHtml = '<div class="ig-inner-chat-messages" id="chatMsgsScroll">';
 
-                data.messages.forEach(m => {
-                    let senderVal = m.sender || m.SenderUsername || m.Sender || m.username || m.Username || "";
-                    let isOutgoing = senderVal.trim().toLowerCase() === sessionUser.trim().toLowerCase();
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(m => {
+                        let senderVal = m.sender || m.SenderUsername || m.Sender || m.username || m.Username || "";
+                        let isOutgoing = senderVal.trim().toLowerCase() === sessionUser.trim().toLowerCase();
 
-                    let bubbleClass = isOutgoing ? "outgoing" : "incoming";
-                    let wrapClass = isOutgoing ? "outgoing-wrap" : "incoming-wrap";
+                        let bubbleClass = isOutgoing ? "outgoing" : "incoming";
+                        let wrapClass = isOutgoing ? "outgoing-wrap" : "incoming-wrap";
 
-                    let menuItems = `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'self')">Benden sil</button>`;
-                    if (isOutgoing) {
-                        menuItems += `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'everyone')">İki taraftan da sil</button>`;
-                    }
+                        let menuItems = `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'self')">Benden sil</button>`;
+                        if (isOutgoing) {
+                            menuItems += `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'everyone')">İki taraftan da sil</button>`;
+                        }
 
-                    let incomingAvatarHtml = !isOutgoing ? `
-                        <a href="/Home/Profile/${encodeURIComponent(username)}" style="flex-shrink:0;">
-                            <img src="${profilePic}" class="ig-msg-sender-avatar" />
-                        </a>` : '';
+                        let incomingAvatarHtml = !isOutgoing ? `
+                                <a href="/Home/Profile/${encodeURIComponent(username)}" style="flex-shrink:0;">
+                                    <img src="${profilePic}" class="ig-msg-sender-avatar" />
+                                </a>` : '';
 
-                    let rawDate = m.date || m.Date || m.createdAt || m.CreatedAt || m.timestamp || m.Timestamp;
+                        let rawDate = m.date || m.Date || m.createdAt || m.CreatedAt || m.timestamp || m.Timestamp;
 
-                    messagesHtml += `
-                        <div class="ig-msg-bubble-wrapper ${wrapClass}">
-                            <div class="ig-bubble-row-inner">
-                                ${incomingAvatarHtml}
-                                <div class="ig-bubble ${bubbleClass}">
-                                    ${m.content}
-                                    <span class="ig-msg-time">${formatMessageTime(rawDate)}</span>
-                                </div>
-                                <button type="button" class="ig-msg-options-trigger" onclick="toggleMsgActionMenu(event, '${m.id}')">
-                                    <i class="fa-solid fa-ellipsis"></i>
-                                </button>
-                            </div>
-                            <div id="msg-menu-${m.id}" class="ig-msg-action-menu" onclick="event.stopPropagation()">
-                                ${menuItems}
-                            </div>
-                        </div>`;
-                });
+                        messagesHtml += `
+                                <div class="ig-msg-bubble-wrapper ${wrapClass}">
+                                    <div class="ig-bubble-row-inner">
+                                        ${incomingAvatarHtml}
+                                        <div class="ig-bubble ${bubbleClass}">
+                                            ${m.content}
+                                            <span class="ig-msg-time">${formatMessageTime(rawDate)}</span>
+                                        </div>
+                                        <button type="button" class="ig-msg-options-trigger" onclick="toggleMsgActionMenu(event, '${m.id}')">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </button>
+                                    </div>
+                                    <div id="msg-menu-${m.id}" class="ig-msg-action-menu" onclick="event.stopPropagation()">
+                                        ${menuItems}
+                                    </div>
+                                </div>`;
+                    });
+                } else {
+                    messagesHtml += '<div class="ig-search-no-result" style="margin:auto;">Henüz mesaj yok. İlk mesajı gönder!</div>';
+                }
                 messagesHtml += '</div>';
 
                 let draftVal = data.draft || "";
                 messagesHtml += `
-                    <div class="ig-inner-chat-input-area">
-                        <input type="text" id="innerChatInput" class="ig-inner-chat-input" placeholder="Mesaj gönder..." value="${draftVal}" oninput="handleDraftInput(this.value)" onkeypress="handleInnerChatKey(event)" autocomplete="off" spellcheck="false" autofocus />
-                        <button type="button" class="ig-inner-send-btn" onclick="sendInnerMessage()">Gönder</button>
-                    </div>`;
+                        <div class="ig-inner-chat-input-area" style="position: relative; background: var(--ig-card-bg); padding: 12px 16px; border-top: 1px solid var(--ig-border);">
+                            <!-- Instagram Tarzı Kaydırılabilir Geniş Emoji Paneli -->
+                            <div id="emojiPickerPanel" style="display: none; position: absolute; bottom: 70px; left: 16px; background: var(--ig-card-bg); border: 1px solid var(--ig-border); border-radius: 16px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 99999; grid-template-columns: repeat(6, 1fr); gap: 10px; font-size: 22px; width: 340px; max-height: 220px; overflow-y: auto; box-sizing: border-box;" onclick="event.stopPropagation()">
+                                <span onclick="insertEmojiToInnerChat('😊')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">😊</span>
+                                <span onclick="insertEmojiToInnerChat('❤️')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">❤️</span>
+                                <span onclick="insertEmojiToInnerChat('😂')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">😂</span>
+                                <span onclick="insertEmojiToInnerChat('🔥')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🔥</span>
+                                <span onclick="insertEmojiToInnerChat('😍')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">😍</span>
+                                <span onclick="insertEmojiToInnerChat('👍')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">👍</span>
+                                <span onclick="insertEmojiToInnerChat('🎉')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🎉</span>
+                                <span onclick="insertEmojiToInnerChat('✨')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">✨</span>
+                                <span onclick="insertEmojiToInnerChat('😢')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">😢</span>
+                                <span onclick="insertEmojiToInnerChat('🙏')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🙏</span>
+                                <span onclick="insertEmojiToInnerChat('😎')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">😎</span>
+                                <span onclick="insertEmojiToInnerChat('🥳')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🥳</span>
+                                <span onclick="insertEmojiToInnerChat('🚀')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🚀</span>
+                                <span onclick="insertEmojiToInnerChat('⭐')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">⭐</span>
+                                <span onclick="insertEmojiToInnerChat('💡')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">💡</span>
+                                <span onclick="insertEmojiToInnerChat('🎯')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">🎯</span>
+                                <span onclick="insertEmojiToInnerChat('💻')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">💻</span>
+                                <span onclick="insertEmojiToInnerChat('👑')" style="cursor: pointer; text-align: center; padding: 6px; border-radius: 8px;" onmouseover="this.style.background='var(--ig-hover)'" onmouseout="this.style.background='transparent'">👑</span>
+                            </div>
+
+                            <div style="display: flex; align-items: center; background: var(--ig-input-bg); border: 1px solid var(--ig-border); border-radius: 24px; padding: 8px 16px; gap: 12px; width: 100%; box-sizing: border-box;">
+                                <i class="fa-regular fa-face-smile" style="color: var(--ig-text); font-size: 22px; cursor: pointer;" onclick="toggleEmojiPicker(event)" title="Emoji Ekle"></i>
+                                <input type="text" id="innerChatInput" class="ig-inner-chat-input" placeholder="Mesaj gönder..." value="${draftVal}" oninput="handleDraftInput(this.value)" onkeypress="handleInnerChatKey(event)" autocomplete="off" spellcheck="false" autofocus style="background: none; border: none; outline: none; color: var(--ig-text); font-size: 14px; flex: 1;" />
+                                <button type="button" class="ig-inner-send-btn" onclick="sendInnerMessage()" style="background: none; border: none; color: #0095f6; font-weight: 600; font-size: 14px; cursor: pointer;">Gönder</button>
+                            </div>
+                        </div>`;
 
                 container.innerHTML = messagesHtml;
                 const scrollBox = document.getElementById('chatMsgsScroll');
                 if (scrollBox) scrollBox.scrollTop = scrollBox.scrollHeight;
             });
+    }
+
+    // Index sayfasındaki küçük popup içinden arama tuşuna basıldığında büyük arama ekranına kusursuz köprü kuran fonksiyon:
+    function redirectToMessagesWithUser(username, callType) {
+        window.location.href = `/Home/Messages?call=${callType}&target=${encodeURIComponent(username)}`;
     }
 
     function toggleMsgActionMenu(event, msgId) {
@@ -3309,80 +3317,271 @@
     }
 
     function submitCommentAjax(event, postId) {
-    event.preventDefault();
-    const input = document.getElementById('comment-input-' + postId);
-    const content = input.value.trim();
-    if (!content) return;
+        event.preventDefault();
+        const input = document.getElementById('comment-input-' + postId);
+        const content = input.value.trim();
+        if (!content) return;
 
-    fetch('/Home/AddComment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `postId=${postId}&commentText=${encodeURIComponent(content)}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            input.value = '';
-            const box = document.querySelector('#post-card-' + postId + ' .ig-comment-list');
-            
-            // Eğer "Henüz yorum yok" yazısı varsa kaldır
-            const noComment = box.querySelector('.ig-no-comment');
-            if (noComment) noComment.remove();
+        fetch('/Home/AddComment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `postId=${postId}&commentText=${encodeURIComponent(content)}`
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    const box = document.querySelector('#post-card-' + postId + ' .ig-comment-list');
+                    const noComment = box.querySelector('.ig-no-comment');
+                    if (noComment) noComment.remove();
 
-            // Yeni yorumu HTML olarak listeye ekle
-            const newRow = document.createElement('div');
-            newRow.className = 'ig-comment-row';
-            newRow.id = 'comment-row-' + data.commentId;
-            newRow.innerHTML = `
-                <div class="ig-comment-content-area" style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <img src="${data.userProfilePicture}" alt="Avatar" class="ig-comment-avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />
-                    <div style="flex: 1; word-break: break-word;">
-                        <a href="/Home/Profile/${data.username}" style="text-decoration:none;"><strong class="ig-comment-user">${data.username}</strong></a>
-                        <span class="ig-comment-text">${data.content}</span>
-                    </div>
-                </div>
-                <div style="position: relative;">
-                    <button type="button" class="ig-comment-dots" onclick="toggleCommentMenu(event, '${data.commentId}')"><span></span><span></span><span></span></button>
-                    <div id="comment-menu-${data.commentId}" class="ig-comment-popup-panel">
-                        <button type="button" class="ig-panel-btn delete" onclick="deleteCommentAjax('${data.commentId}')"><i class="fa-solid fa-trash"></i> Sil</button>
-                    </div>
-                </div>`;
-            box.appendChild(newRow);
-            box.scrollTop = box.scrollHeight;
+                    const newRow = document.createElement('div');
+                    newRow.className = 'ig-comment-row';
+                    newRow.id = 'comment-row-' + data.commentId;
+                    newRow.innerHTML = `
+                        <div class="ig-comment-content-area" style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                            <img src="${data.userProfilePicture}" alt="Avatar" class="ig-comment-avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />
+                            <div style="flex: 1; word-break: break-word;">
+                                <a href="/Home/Profile/${data.username}" style="text-decoration:none;"><strong class="ig-comment-user">${data.username}</strong></a>
+                                <span class="ig-comment-text">${data.content}</span>
+                            </div>
+                        </div>
+                        <div style="position: relative;">
+                            <button type="button" class="ig-comment-dots" onclick="toggleCommentMenu(event, '${data.commentId}')"><span></span><span></span><span></span></button>
+                            <div id="comment-menu-${data.commentId}" class="ig-comment-popup-panel">
+                                <button type="button" class="ig-panel-btn delete" onclick="deleteCommentAjax('${data.commentId}')"><i class="fa-solid fa-trash"></i> Sil</button>
+                            </div>
+                        </div>`;
+                    box.appendChild(newRow);
+                    box.scrollTop = box.scrollHeight;
 
-            // Yorum sayacını güncelle
-            const countSpan = document.getElementById('comment-count-' + postId);
-            if (countSpan) {
-                countSpan.textContent = data.commentCount;
-                countSpan.style.display = data.commentCount > 0 ? "inline" : "none";
-            }
-        }
-    });
-}
-
-function deleteCommentAjax(commentId) {
-    fetch('/Home/DeleteCommentAjax?commentId=' + commentId, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const row = document.getElementById('comment-row-' + commentId);
-                if (row) {
-                    const commentList = row.closest('.ig-comment-list');
-                    row.remove();
-                    
-                    // Eğer hiç yorum kalmadıysa "Henüz yorum yok" yazısını geri getir
-                    if (commentList && commentList.children.length === 0) {
-                        commentList.innerHTML = '<span class="ig-no-comment">Henüz yorum yok. İlk yorumu sen yaz!</span>';
+                    const countSpan = document.getElementById('comment-count-' + postId);
+                    if (countSpan) {
+                        countSpan.textContent = data.commentCount;
+                        countSpan.style.display = data.commentCount > 0 ? "inline" : "none";
                     }
                 }
-                // Yorum sayacını güncelle
-                const countSpan = document.getElementById('comment-count-' + data.postId);
-                if (countSpan) {
-                    countSpan.textContent = data.commentCount;
-                    countSpan.style.display = data.commentCount > 0 ? "inline" : "none";
+            });
+    }
+
+    function deleteCommentAjax(commentId) {
+        fetch('/Home/DeleteCommentAjax?commentId=' + commentId, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = document.getElementById('comment-row-' + commentId);
+                    if (row) {
+                        const commentList = row.closest('.ig-comment-list');
+                        row.remove();
+                        if (commentList && commentList.children.length === 0) {
+                            commentList.innerHTML = '<span class="ig-no-comment">Henüz yorum yok. İlk yorumu sen yaz!</span>';
+                        }
+                    }
+                    const countSpan = document.getElementById('comment-count-' + data.postId);
+                    if (countSpan) {
+                        countSpan.textContent = data.commentCount;
+                        countSpan.style.display = data.commentCount > 0 ? "inline" : "none";
+                    }
+                }
+            });
+    }
+
+    // Index popup içinden doğrudan kamera/mikrofon erişimiyle arama başlatma
+    async function startPopupLiveCall(callType, targetUsername) {
+        if (!targetUsername) return;
+
+        let modal = document.getElementById('liveCallModal');
+        if (!modal) {
+            let modalHtml = `
+                    <div id="liveCallModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); z-index: 999999999; align-items: center; justify-content: center; flex-direction: column;">
+                        <div style="position: relative; width: 85vw; max-width: 900px; height: 65vh; background: #121212; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #363636;">
+                            <div id="remoteVideoContainer" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #000;"></div>
+                            <div id="localVideoContainer" style="position: absolute; bottom: 20px; right: 20px; width: 160px; height: 110px; border-radius: 8px; overflow: hidden; border: 2px solid #fff; background: #222; z-index: 5;"></div>
+                            <div id="liveCallStatus" style="position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">Bağlantı bekleniyor...</div>
+                        </div>
+                        <div style="margin-top: 25px; display: flex; gap: 20px;">
+                            <button type="button" onclick="endPopupLiveCall()" style="background: #ed4956; color: white; border: none; width: 65px; height: 65px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(237,73,86,0.6);" title="Aramayı Kapat"><i class="fa-solid fa-phone-slash"></i></button>
+                        </div>
+                    </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            modal = document.getElementById('liveCallModal');
+        }
+
+        const statusText = document.getElementById('liveCallStatus');
+        modal.style.display = 'flex';
+        let callStartTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (statusText) statusText.textContent = `${targetUsername} aranıyor... (${callStartTime})`;
+
+        try {
+            const constraints = { video: callType === 'video', audio: true };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            window.activeCallStream = stream;
+
+            const localContainer = document.getElementById('localVideoContainer');
+            if (localContainer) {
+                localContainer.innerHTML = '';
+                if (callType === 'video') {
+                    const localVideo = document.createElement('video');
+                    localVideo.srcObject = stream;
+                    localVideo.autoplay = true;
+                    localVideo.playsInline = true;
+                    localVideo.muted = true;
+                    localVideo.style.width = "100%";
+                    localVideo.style.height = "100%";
+                    localVideo.style.objectFit = "cover";
+                    localContainer.appendChild(localVideo);
                 }
             }
-        });
-}
+
+            const remoteContainer = document.getElementById('remoteVideoContainer');
+            if (remoteContainer) {
+                remoteContainer.innerHTML = '';
+                const remoteVideo = document.createElement('video');
+                remoteVideo.srcObject = stream;
+                remoteVideo.autoplay = true;
+                remoteVideo.playsInline = true;
+                remoteVideo.style.width = "100%";
+                remoteVideo.style.height = "100%";
+                remoteVideo.style.objectFit = "cover";
+                remoteContainer.appendChild(remoteVideo);
+            }
+
+            if (statusText) statusText.textContent = `${targetUsername} ile görüşülüyor`;
+
+            let callMsg = callType === 'video' ? `📹 Görüntülü Arama Başlatıldı (${callStartTime})` : `📞 Sesli Arama Başlatıldı (${callStartTime})`;
+            fetch('/Home/SendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `receiverUsername=${encodeURIComponent(targetUsername)}&content=${encodeURIComponent(callMsg)}`
+            });
+
+        } catch (err) {
+            console.error("Kamera hatası:", err);
+            alert("Kameraya veya mikrofona erişilemedi!");
+            endPopupLiveCall();
+        }
+    }
+
+    // Popup içinden aramayı sonlandırma ve ana sayfadaki kutuda kalma
+    function endPopupLiveCall() {
+        const modal = document.getElementById('liveCallModal');
+        if (modal) {
+            modal.remove();
+        }
+
+        if (window.activeCallStream) {
+            window.activeCallStream.getTracks().forEach(track => track.stop());
+            window.activeCallStream = null;
+        }
+
+        const localContainer = document.getElementById('localVideoContainer');
+        if (localContainer) localContainer.innerHTML = '';
+        const remoteContainer = document.getElementById('remoteVideoContainer');
+        if (remoteContainer) remoteContainer.innerHTML = '';
+
+        // Eğer aktif bir sohbet açıksa, "Arama sonlandırıldı" mesajını anında gönderip sohbeti güncelleyelim
+        if (currentActiveChatUser) {
+            let endTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let endMsg = `❌ Arama sonlandırıldı (${endTime})`;
+
+            fetch('/Home/SendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `receiverUsername=${encodeURIComponent(currentActiveChatUser)}&content=${encodeURIComponent(endMsg)}`
+            }).then(() => {
+                // Mesaj anında düşsün diye sohbet içeriğini hemen güncelliyoruz
+                fetch('/Home/GetChatMessages?partnerUsername=' + encodeURIComponent(currentActiveChatUser))
+                    .then(res => res.json())
+                    .then(data => {
+                        const container = document.getElementById('igMsgPopupContentArea');
+                        if (!container) return;
+
+                        let messagesHtml = '<div class="ig-inner-chat-messages" id="chatMsgsScroll">';
+                        if (data.messages && data.messages.length > 0) {
+                            data.messages.forEach(m => {
+                                let senderVal = m.sender || m.SenderUsername || m.Sender || m.username || m.Username || "";
+                                let isOutgoing = senderVal.trim().toLowerCase() === sessionUser.trim().toLowerCase();
+                                let bubbleClass = isOutgoing ? "outgoing" : "incoming";
+                                let wrapClass = isOutgoing ? "outgoing-wrap" : "incoming-wrap";
+                                let menuItems = `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'self')">Benden sil</button>`;
+                                if (isOutgoing) {
+                                    menuItems += `<button type="button" class="ig-msg-action-item delete" onclick="deleteMessage('${m.id}', 'everyone')">İki taraftan da sil</button>`;
+                                }
+                                let incomingAvatarHtml = !isOutgoing ? `
+                                        <a href="/Home/Profile/${encodeURIComponent(currentActiveChatUser)}" style="flex-shrink:0;">
+                                            <img src="${currentActiveProfilePic}" class="ig-msg-sender-avatar" />
+                                        </a>` : '';
+                                let rawDate = m.date || m.Date || m.createdAt || m.CreatedAt || m.timestamp || m.Timestamp;
+
+                                messagesHtml += `
+                                        <div class="ig-msg-bubble-wrapper ${wrapClass}">
+                                            <div class="ig-bubble-row-inner">
+                                                ${incomingAvatarHtml}
+                                                <div class="ig-bubble ${bubbleClass}">
+                                                    ${m.content}
+                                                    <span class="ig-msg-time">${formatMessageTime(rawDate)}</span>
+                                                </div>
+                                                <button type="button" class="ig-msg-options-trigger" onclick="toggleMsgActionMenu(event, '${m.id}')">
+                                                    <i class="fa-solid fa-ellipsis"></i>
+                                                </button>
+                                            </div>
+                                            <div id="msg-menu-${m.id}" class="ig-msg-action-menu" onclick="event.stopPropagation()">
+                                                ${menuItems}
+                                            </div>
+                                        </div>`;
+                            });
+                        }
+                        messagesHtml += '</div>';
+
+                        let draftVal = data.draft || "";
+                        messagesHtml += `
+                                <div class="ig-inner-chat-input-area">
+                                    <input type="text" id="innerChatInput" class="ig-inner-chat-input" placeholder="Mesaj gönder..." value="${draftVal}" oninput="handleDraftInput(this.value)" onkeypress="handleInnerChatKey(event)" autocomplete="off" spellcheck="false" autofocus />
+                                    <button type="button" class="ig-inner-send-btn" onclick="sendInnerMessage()">Gönder</button>
+                                </div>`;
+
+                        container.innerHTML = messagesHtml;
+                        const scrollBox = document.getElementById('chatMsgsScroll');
+                        if (scrollBox) scrollBox.scrollTop = scrollBox.scrollHeight;
+                    });
+            });
+        }
+
+        // Kutunun açık kalmasını garantiye alıyoruz
+        setTimeout(() => {
+            const popup = document.getElementById('igMessagePopup');
+            if (popup) popup.style.display = 'flex';
+        }, 50);
+    }
+
+    function toggleEmojiPicker(event) {
+        event.stopPropagation();
+        const panel = document.getElementById('emojiPickerPanel');
+        if (panel) {
+            panel.style.display = panel.style.display === 'grid' ? 'none' : 'grid';
+        }
+    }
+
+    function insertEmojiToInnerChat(emoji) {
+        const input = document.getElementById('innerChatInput');
+        if (input) {
+            input.value += emoji;
+            input.focus();
+            handleDraftInput(input.value);
+        }
+        // DİKKAT: Buradan panel.style.display = 'none' kodunu kaldırdık!
+        // Böylece emojiye tıklayınca panel açık kalmaya devam eder, başka yere basana kadar kapanmaz.
+    }
+
+    // Sadece panelin dışına veya emoji ikonuna tekrar basıldığında kapanmasını sağlayan global dinleyici
+    document.addEventListener('click', function(e) {
+        const panel = document.getElementById('emojiPickerPanel');
+        if (panel && panel.style.display === 'grid') {
+            if (!panel.contains(e.target) && !e.target.classList.contains('fa-face-smile')) {
+                panel.style.display = 'none';
+            }
+        }
+    }, true);
+
 </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
